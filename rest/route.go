@@ -1,6 +1,9 @@
 package rest
 
-import "reflect"
+import (
+	"net/http"
+	"reflect"
+)
 
 type HandlerInterface interface {
 	Handle(*Context) any
@@ -31,4 +34,20 @@ func (g *RouteGroup) Handle(path string, method string, handlerType HandlerInter
 		HandlerType: t,
 	}
 	g.Factories = append(g.Factories, factory)
+}
+
+func (g *RouteGroup) GET(path string, handlerType HandlerInterface) {
+	g.Handle(path, http.MethodGet, handlerType)
+}
+
+func (g *RouteGroup) POST(path string, handlerType HandlerInterface) {
+	g.Handle(path, http.MethodPost, handlerType)
+}
+
+func (g *RouteGroup) PUT(path string, handlerType HandlerInterface) {
+	g.Handle(path, http.MethodPut, handlerType)
+}
+
+func (g *RouteGroup) DELETE(path string, handlerType HandlerInterface) {
+	g.Handle(path, http.MethodDelete, handlerType)
 }

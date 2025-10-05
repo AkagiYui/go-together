@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/akagiyui/go-together/rest"
@@ -83,8 +82,8 @@ func main() {
 	s := rest.NewServer()
 
 	// 注册处理器
-	s.Handle("/todos", http.MethodPost, &CreateTodoRequest{})
-	s.Handle("/todos", http.MethodGet, &GetTodosRequest{})
+	s.POST("/todos", &CreateTodoRequest{})
+	s.GET("/todos", &GetTodosRequest{})
 
 	// 启动服务器
 	println("🚀 Server starting on http://localhost:8080")
