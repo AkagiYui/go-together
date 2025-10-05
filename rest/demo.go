@@ -1,4 +1,4 @@
-package kenkorest
+package rest
 
 func Hello() string {
 	return "Hello World"

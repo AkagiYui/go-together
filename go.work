@@ -1,6 +1,6 @@
 go 1.24.5
 
 use (
-	./kenko-rest
-	./kenko-todo
+	./rest
+	./nottodo
 )
