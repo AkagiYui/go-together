@@ -58,6 +58,21 @@ func (r *GetTodosRequest) Handle(ctx *rest.Context) any {
 	}
 }
 
+type GetTodoByIDRequest struct {
+	ID int `path:"id"`
+}
+
+func (r *GetTodoByIDRequest) Handle(ctx *rest.Context) any {
+	for _, todo := range todos {
+		if todo.ID == r.ID {
+			return todo
+		}
+	}
+	return map[string]string{
+		"error": "Todo not found",
+	}
+}
+
 func main() {
 	// 初始化一些示例数据
 	todos = []Todo{
@@ -84,12 +99,14 @@ func main() {
 	// 注册处理器
 	s.POST("/todos", &CreateTodoRequest{})
 	s.GET("/todos", &GetTodosRequest{})
+	s.GET("/todos/{id}", &GetTodoByIDRequest{})
 
 	// 启动服务器
 	println("🚀 Server starting on http://localhost:8080")
 	println("📚 API Documentation:")
 	println("  POST   /todos        - 创建Todo")
 	println("  GET    /todos        - 获取所有Todo")
+	println("  GET    /todos/{id}   - 获取指定ID的Todo")
 
 	err := s.Run(":8080")
 	if err != nil {
