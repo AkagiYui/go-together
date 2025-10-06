@@ -33,14 +33,6 @@ func (s *Server) Run(addr string) error {
 		}
 
 		mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
-			// 读取请求体
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte("Failed to read request body"))
-				return
-			}
-
 			// 创建新的处理器实例
 			handlerValue := reflect.New(factory.HandlerType)
 			handlerInterface := handlerValue.Interface()
@@ -53,6 +45,12 @@ func (s *Server) Run(addr string) error {
 				return
 			}
 
+			ctx := &Context{
+				Method: r.Method,
+				Path:   r.URL.Path,
+				Body:   nil,
+			}
+
 			// 解析 query 和 path 和 header 参数
 			needParseBody, err := s.parseParams(r, handlerInterface)
 			if err != nil {
@@ -62,19 +60,24 @@ func (s *Server) Run(addr string) error {
 			}
 
 			// 如果请求体不为空，尝试解析 JSON 到结构体
-			if needParseBody && len(body) > 0 {
-				if err := json.Unmarshal(body, handlerInterface); err != nil {
+			if needParseBody {
+				// 读取请求体
+				body, err := io.ReadAll(r.Body)
+				if err != nil {
 					w.WriteHeader(http.StatusBadRequest)
-					w.Write([]byte("Invalid JSON format: " + err.Error()))
+					w.Write([]byte("Failed to read request body"))
 					return
+				}
+				ctx.Body = body
+				if len(body) > 0 {
+					if err := json.Unmarshal(body, handlerInterface); err != nil {
+						w.WriteHeader(http.StatusBadRequest)
+						w.Write([]byte("Invalid JSON format: " + err.Error()))
+						return
+					}
 				}
 			}
 
-			ctx := &Context{
-				Method: r.Method,
-				Path:   r.URL.Path,
-				Body:   body,
-			}
 			result := handler.Handle(ctx)
 			s.writeResponse(w, result)
 		})
