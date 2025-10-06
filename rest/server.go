@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 type Server struct {
@@ -34,11 +35,28 @@ func (s *Server) Run(addr string) error {
 
 		mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 			ctx := &Context{
-				Method:     r.Method,
-				Path:       r.URL.Path,
-				Body:       nil,
+				Method: r.Method,
+
+				Endpoint: r.URL.Path,
+				URI:      r.RequestURI,
+
+				Body:          nil,
+				URL:           *r.URL,
+				Host:          r.Host,
+				RemoteAddr:    r.RemoteAddr,
+				ContentLength: r.ContentLength,
+
+				Params: make(map[string]string),
+				Query:  make(map[string]string),
+				Header: make(map[string]string),
+				Form:   make(map[string]string),
+
+				header:     r.Header,
 				statusCode: http.StatusOK,
 			}
+
+			println("URL.Path", r.URL.Path)
+			println("RequestURI", r.RequestURI)
 
 			var result any
 
@@ -78,10 +96,12 @@ func (s *Server) Run(addr string) error {
 					}
 					ctx.Body = body
 					if len(body) > 0 {
-						if err := json.Unmarshal(body, handlerInterface); err != nil {
-							w.WriteHeader(http.StatusBadRequest)
-							w.Write([]byte("Invalid JSON format: " + err.Error()))
-							return
+						if strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
+							if err := json.Unmarshal(body, handlerInterface); err != nil {
+								w.WriteHeader(http.StatusBadRequest)
+								w.Write([]byte("Invalid JSON format: " + err.Error()))
+								return
+							}
 						}
 					}
 				}
