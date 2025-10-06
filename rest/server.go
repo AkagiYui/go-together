@@ -46,9 +46,10 @@ func (s *Server) Run(addr string) error {
 			}
 
 			ctx := &Context{
-				Method: r.Method,
-				Path:   r.URL.Path,
-				Body:   nil,
+				Method:     r.Method,
+				Path:       r.URL.Path,
+				Body:       nil,
+				statusCode: http.StatusOK,
 			}
 
 			// 解析 query 和 path 和 header 参数
@@ -79,7 +80,7 @@ func (s *Server) Run(addr string) error {
 			}
 
 			result := handler.Handle(ctx)
-			s.writeResponse(w, result)
+			s.writeResponse(w, result, ctx)
 		})
 	}
 
@@ -87,20 +88,21 @@ func (s *Server) Run(addr string) error {
 }
 
 // writeResponse 统一处理响应写入
-func (s *Server) writeResponse(w http.ResponseWriter, result any) {
+func (s *Server) writeResponse(w http.ResponseWriter, result any, ctx *Context) {
 	if result == nil {
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(ctx.statusCode)
 		return
 	}
 
-	// 设置 Content-Type
-	w.Header().Set("Content-Type", "application/json")
+	contentType := "application/json"
 
 	// 判断类型
 	switch result := result.(type) {
 	case string:
+		contentType = "text/plain"
 		w.Write([]byte(result))
 	case int:
+		contentType = "text/plain"
 		w.Write([]byte(strconv.Itoa(result)))
 	default:
 		b, err := json.Marshal(result)
@@ -111,6 +113,8 @@ func (s *Server) writeResponse(w http.ResponseWriter, result any) {
 		}
 		w.Write(b)
 	}
+
+	w.Header().Set("Content-Type", contentType)
 }
 
 // parseParams 解析query参数和path参数和header参数到结构体字段
