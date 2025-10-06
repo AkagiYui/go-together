@@ -129,6 +129,10 @@ func (s *Server) parseParams(r *http.Request, handlerInterface interface{}) (nee
 		field := handlerType.Field(i)
 		fieldValue := handlerValue.Field(i)
 
+		if !needParseBody {
+			needParseBody = field.Tag.Get("json") != "" || field.Tag.Get("form") != "" || field.Tag.Get("body") != ""
+		}
+
 		// 检查字段是否可设置
 		if !fieldValue.CanSet() {
 			continue
@@ -159,10 +163,6 @@ func (s *Server) parseParams(r *http.Request, handlerInterface interface{}) (nee
 					return
 				}
 			}
-		}
-
-		if !needParseBody {
-			needParseBody = field.Tag.Get("json") != "" || field.Tag.Get("form") != "" || field.Tag.Get("body") != ""
 		}
 	}
 
