@@ -1,1 +1,3 @@
 nottodo-gin/
+example*
+*_test.go

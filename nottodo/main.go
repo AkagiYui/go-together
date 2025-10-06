@@ -73,7 +73,7 @@ func (r *GetTodoByIDRequest) Handle(ctx *rest.Context) any {
 	}
 }
 
-func main() {
+func init() {
 	// 初始化一些示例数据
 	todos = []Todo{
 		{
@@ -92,24 +92,25 @@ func main() {
 		},
 	}
 	nextID = 3
+}
 
-	// 创建路由器
+func main() {
 	s := rest.NewServer()
 
-	// 注册处理器
+	s.GETFunc("/healtz", func(ctx *rest.Context) any {
+		return "Hello, World!"
+	})
 	s.POST("/todos", &CreateTodoRequest{})
 	s.GET("/todos", &GetTodosRequest{})
 	s.GET("/todos/{id}", &GetTodoByIDRequest{})
 
-	// 启动服务器
 	println("🚀 Server starting on http://localhost:8080")
 	println("📚 API Documentation:")
 	println("  POST   /todos        - 创建Todo")
 	println("  GET    /todos        - 获取所有Todo")
 	println("  GET    /todos/{id}   - 获取指定ID的Todo")
 
-	err := s.Run(":8080")
-	if err != nil {
+	if err := s.Run(":8080"); err != nil {
 		panic(err)
 	}
 }

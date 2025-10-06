@@ -33,18 +33,6 @@ func (s *Server) Run(addr string) error {
 		}
 
 		mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
-			// 创建新的处理器实例
-			handlerValue := reflect.New(factory.HandlerType)
-			handlerInterface := handlerValue.Interface()
-
-			// 确保实现了 HandlerInterface
-			handler, ok := handlerInterface.(HandlerInterface)
-			if !ok {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte("Handler does not implement HandlerInterface"))
-				return
-			}
-
 			ctx := &Context{
 				Method:     r.Method,
 				Path:       r.URL.Path,
@@ -52,34 +40,55 @@ func (s *Server) Run(addr string) error {
 				statusCode: http.StatusOK,
 			}
 
-			// 解析 query 和 path 和 header 参数
-			needParseBody, err := s.parseParams(r, handlerInterface)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte("Failed to parse parameters: " + err.Error()))
-				return
-			}
+			var result any
 
-			// 如果请求体不为空，尝试解析 JSON 到结构体
-			if needParseBody {
-				// 读取请求体
-				body, err := io.ReadAll(r.Body)
-				if err != nil {
-					w.WriteHeader(http.StatusBadRequest)
-					w.Write([]byte("Failed to read request body"))
+			if factory.IsFunc {
+				// 处理函数处理器
+				result = factory.HandlerFunc(ctx)
+			} else {
+				// 处理结构体处理器
+				// 创建新的处理器实例
+				handlerValue := reflect.New(factory.HandlerType)
+				handlerInterface := handlerValue.Interface()
+
+				// 确保实现了 HandlerInterface
+				handler, ok := handlerInterface.(HandlerInterface)
+				if !ok {
+					w.WriteHeader(http.StatusInternalServerError)
+					w.Write([]byte("Handler does not implement HandlerInterface"))
 					return
 				}
-				ctx.Body = body
-				if len(body) > 0 {
-					if err := json.Unmarshal(body, handlerInterface); err != nil {
+
+				// 解析 query 和 path 和 header 参数
+				needParseBody, err := s.parseParams(r, handlerInterface)
+				if err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					w.Write([]byte("Failed to parse parameters: " + err.Error()))
+					return
+				}
+
+				// 如果请求体不为空，尝试解析 JSON 到结构体
+				if needParseBody {
+					// 读取请求体
+					body, err := io.ReadAll(r.Body)
+					if err != nil {
 						w.WriteHeader(http.StatusBadRequest)
-						w.Write([]byte("Invalid JSON format: " + err.Error()))
+						w.Write([]byte("Failed to read request body"))
 						return
 					}
+					ctx.Body = body
+					if len(body) > 0 {
+						if err := json.Unmarshal(body, handlerInterface); err != nil {
+							w.WriteHeader(http.StatusBadRequest)
+							w.Write([]byte("Invalid JSON format: " + err.Error()))
+							return
+						}
+					}
 				}
+
+				result = handler.Handle(ctx)
 			}
 
-			result := handler.Handle(ctx)
 			s.writeResponse(w, result, ctx)
 		})
 	}
