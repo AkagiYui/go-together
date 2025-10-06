@@ -53,20 +53,21 @@ func (s *Server) Run(addr string) error {
 				return
 			}
 
+			// 解析 query 和 path 和 header 参数
+			needParseBody, err := s.parseParams(r, handlerInterface)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("Failed to parse parameters: " + err.Error()))
+				return
+			}
+
 			// 如果请求体不为空，尝试解析 JSON 到结构体
-			if len(body) > 0 {
+			if needParseBody && len(body) > 0 {
 				if err := json.Unmarshal(body, handlerInterface); err != nil {
 					w.WriteHeader(http.StatusBadRequest)
 					w.Write([]byte("Invalid JSON format: " + err.Error()))
 					return
 				}
-			}
-
-			// 解析 query 和 path 参数
-			if err := s.parseParams(r, handlerInterface); err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte("Failed to parse parameters: " + err.Error()))
-				return
 			}
 
 			ctx := &Context{
@@ -109,8 +110,9 @@ func (s *Server) writeResponse(w http.ResponseWriter, result any) {
 	}
 }
 
-// parseParams 解析URL查询参数和路径参数到结构体字段
-func (s *Server) parseParams(r *http.Request, handlerInterface interface{}) error {
+// parseParams 解析query参数和path参数和header参数到结构体字段
+func (s *Server) parseParams(r *http.Request, handlerInterface interface{}) (needParseBody bool, err error) {
+	needParseBody = false
 	handlerValue := reflect.ValueOf(handlerInterface)
 	if handlerValue.Kind() == reflect.Ptr {
 		handlerValue = handlerValue.Elem()
@@ -118,6 +120,7 @@ func (s *Server) parseParams(r *http.Request, handlerInterface interface{}) erro
 	handlerType := handlerValue.Type()
 
 	queryValues := r.URL.Query()
+	headers := r.Header
 
 	for i := 0; i < handlerType.NumField(); i++ {
 		field := handlerType.Field(i)
@@ -131,8 +134,8 @@ func (s *Server) parseParams(r *http.Request, handlerInterface interface{}) erro
 		// 处理 query tag
 		if queryTag := field.Tag.Get("query"); queryTag != "" {
 			if queryParam := queryValues.Get(queryTag); queryParam != "" {
-				if err := s.setFieldValue(fieldValue, queryParam); err != nil {
-					return err
+				if err = s.setFieldValue(fieldValue, queryParam); err != nil {
+					return
 				}
 			}
 		}
@@ -140,14 +143,27 @@ func (s *Server) parseParams(r *http.Request, handlerInterface interface{}) erro
 		// 处理 path tag
 		if pathTag := field.Tag.Get("path"); pathTag != "" {
 			if pathParam := r.PathValue(pathTag); pathParam != "" {
-				if err := s.setFieldValue(fieldValue, pathParam); err != nil {
-					return err
+				if err = s.setFieldValue(fieldValue, pathParam); err != nil {
+					return
 				}
 			}
 		}
+
+		// 处理 header tag
+		if headerTag := field.Tag.Get("header"); headerTag != "" {
+			if headerValue := headers.Get(headerTag); headerValue != "" {
+				if err = s.setFieldValue(fieldValue, headerValue); err != nil {
+					return
+				}
+			}
+		}
+
+		if !needParseBody {
+			needParseBody = field.Tag.Get("json") != "" || field.Tag.Get("form") != "" || field.Tag.Get("body") != ""
+		}
 	}
 
-	return nil
+	return
 }
 
 // setFieldValue 根据字段类型设置值
