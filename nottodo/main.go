@@ -26,9 +26,7 @@ type CreateTodoRequest struct {
 func (r *CreateTodoRequest) Handle(ctx *rest.Context) any {
 	// 验证必填字段
 	if r.Title == "" {
-		return map[string]string{
-			"error": "Title is required",
-		}
+		return Error(INPUT_ERROR, "Title is required")
 	}
 
 	// 创建新的 Todo
@@ -43,19 +41,16 @@ func (r *CreateTodoRequest) Handle(ctx *rest.Context) any {
 	nextID++
 	todos = append(todos, newTodo)
 
-	return map[string]interface{}{
-		"message": "Todo created successfully",
-		"data":    newTodo,
-	}
+	return Success(newTodo)
 }
 
 type GetTodosRequest struct{}
 
 func (r *GetTodosRequest) Handle(ctx *rest.Context) any {
-	return map[string]interface{}{
-		"data":  todos,
-		"count": len(todos),
-	}
+	return Success(PageData{
+		Total: len(todos),
+		List:  todos,
+	})
 }
 
 type GetTodoByIDRequest struct {
@@ -65,12 +60,10 @@ type GetTodoByIDRequest struct {
 func (r *GetTodoByIDRequest) Handle(ctx *rest.Context) any {
 	for _, todo := range todos {
 		if todo.ID == r.ID {
-			return todo
+			return Success(todo)
 		}
 	}
-	return map[string]string{
-		"error": "Todo not found",
-	}
+	return Error(INPUT_ERROR, "Todo not found")
 }
 
 func init() {
@@ -98,7 +91,7 @@ func main() {
 	s := rest.NewServer()
 
 	s.GETFunc("/healtz", func(ctx *rest.Context) any {
-		return "Hello, World!"
+		return Success("Hello, World!")
 	})
 	s.POST("/todos", &CreateTodoRequest{})
 	s.GET("/todos", &GetTodosRequest{})
