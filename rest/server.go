@@ -14,12 +14,16 @@ type Server struct {
 	RouteGroup
 }
 
+func NewRouteGroup(basePath string) RouteGroup {
+	return RouteGroup{
+		Factories: make([]HandlerFactory, 0),
+		BasePath:  basePath,
+	}
+}
+
 func NewServer() *Server {
 	return &Server{
-		RouteGroup: RouteGroup{
-			Factories: make([]HandlerFactory, 0),
-			BasePath:  "",
-		},
+		RouteGroup: NewRouteGroup(""),
 	}
 }
 
