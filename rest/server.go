@@ -106,15 +106,18 @@ func (s *Server) writeResponse(w http.ResponseWriter, result any, ctx *Context) 
 		return
 	}
 
-	contentType := "application/json"
+	// 调用 w.Write 时，如果没有调用 WriteHeader，会自动调用 WriteHeader(200)
+	// 在 w.WriteHeader 后，就不能再修改 Header 了
 
 	// 判断类型
 	switch result := result.(type) {
 	case string:
-		contentType = "text/plain"
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(ctx.statusCode)
 		w.Write([]byte(result))
 	case int:
-		contentType = "text/plain"
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(ctx.statusCode)
 		w.Write([]byte(strconv.Itoa(result)))
 	default:
 		b, err := json.Marshal(result)
@@ -123,10 +126,10 @@ func (s *Server) writeResponse(w http.ResponseWriter, result any, ctx *Context) 
 			w.Write([]byte(err.Error()))
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(ctx.statusCode)
 		w.Write(b)
 	}
-
-	w.Header().Set("Content-Type", contentType)
 }
 
 // parseParams 解析query参数和path参数和header参数到结构体字段
