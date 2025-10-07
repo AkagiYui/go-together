@@ -2,6 +2,7 @@ package rest
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"reflect"
@@ -51,7 +52,7 @@ func (s *Server) Run(addr string) error {
 				}
 
 				// 解析 query 和 path 和 header 参数
-				needParseBody, err := s.parseParams(r, handlerInterface)
+				needParseBody, err := parseParams(ctx, handlerInterface)
 				if err != nil {
 					w.WriteHeader(http.StatusBadRequest)
 					w.Write([]byte("Failed to parse parameters: " + err.Error()))
@@ -69,7 +70,7 @@ func (s *Server) Run(addr string) error {
 					}
 					ctx.Body = body
 					if len(body) > 0 {
-						if strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
+						if strings.HasPrefix(strings.Trim(r.Header.Get("Content-Type"), " "), "application/json") {
 							if err := json.Unmarshal(body, handlerInterface); err != nil {
 								w.WriteHeader(http.StatusBadRequest)
 								w.Write([]byte("Invalid JSON format: " + err.Error()))
@@ -120,7 +121,7 @@ func (s *Server) writeResponse(w http.ResponseWriter, result any, ctx *Context) 
 }
 
 // parseParams 解析query参数和path参数和header参数到结构体字段
-func (s *Server) parseParams(r *http.Request, handlerInterface interface{}) (needParseBody bool, err error) {
+func parseParams(ctx *Context, handlerInterface interface{}) (needParseBody bool, err error) {
 	needParseBody = false
 	handlerValue := reflect.ValueOf(handlerInterface)
 	if handlerValue.Kind() == reflect.Ptr {
@@ -128,8 +129,9 @@ func (s *Server) parseParams(r *http.Request, handlerInterface interface{}) (nee
 	}
 	handlerType := handlerValue.Type()
 
-	queryValues := r.URL.Query()
-	headers := r.Header
+	pathParams := ctx.PathParams
+	queryValues := ctx.Query
+	headers := ctx.Header
 
 	for i := 0; i < handlerType.NumField(); i++ {
 		field := handlerType.Field(i)
@@ -147,7 +149,7 @@ func (s *Server) parseParams(r *http.Request, handlerInterface interface{}) (nee
 		// 处理 query tag
 		if queryTag := field.Tag.Get("query"); queryTag != "" {
 			if queryParam := queryValues.Get(queryTag); queryParam != "" {
-				if err = s.setFieldValue(fieldValue, queryParam); err != nil {
+				if err = setFieldValue(fieldValue, queryParam); err != nil {
 					return
 				}
 			}
@@ -155,8 +157,8 @@ func (s *Server) parseParams(r *http.Request, handlerInterface interface{}) (nee
 
 		// 处理 path tag
 		if pathTag := field.Tag.Get("path"); pathTag != "" {
-			if pathParam := r.PathValue(pathTag); pathParam != "" {
-				if err = s.setFieldValue(fieldValue, pathParam); err != nil {
+			if pathParam, ok := pathParams[pathTag]; ok && pathParam != "" {
+				if err = setFieldValue(fieldValue, pathParam); err != nil {
 					return
 				}
 			}
@@ -165,7 +167,7 @@ func (s *Server) parseParams(r *http.Request, handlerInterface interface{}) (nee
 		// 处理 header tag
 		if headerTag := field.Tag.Get("header"); headerTag != "" {
 			if headerValue := headers.Get(headerTag); headerValue != "" {
-				if err = s.setFieldValue(fieldValue, headerValue); err != nil {
+				if err = setFieldValue(fieldValue, headerValue); err != nil {
 					return
 				}
 			}
@@ -176,7 +178,7 @@ func (s *Server) parseParams(r *http.Request, handlerInterface interface{}) (nee
 }
 
 // setFieldValue 根据字段类型设置值
-func (s *Server) setFieldValue(fieldValue reflect.Value, value string) error {
+func setFieldValue(fieldValue reflect.Value, value string) error {
 	switch fieldValue.Kind() {
 	case reflect.String:
 		fieldValue.SetString(value)
@@ -206,6 +208,7 @@ func (s *Server) setFieldValue(fieldValue reflect.Value, value string) error {
 		fieldValue.SetBool(boolVal)
 	default:
 		// 对于不支持的类型，暂时跳过
+		fmt.Printf("Unsupported field type: %s for value: %s\n", fieldValue.Kind(), value)
 		return nil
 	}
 	return nil
