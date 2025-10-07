@@ -5,10 +5,10 @@ import (
 	"reflect"
 )
 
-type HandlerFunc func(*Context) any
+type HandlerFunc func(*Context)
 
 type HandlerInterface interface {
-	Handle(*Context) any
+	Handle(*Context)
 }
 
 // HandlerFactory 用于创建处理器实例的工厂
@@ -47,8 +47,8 @@ type HandlerFuncAdapter struct {
 }
 
 // Handle 实现 HandlerInterface 接口
-func (h *HandlerFuncAdapter) Handle(ctx *Context) any {
-	return h.handlerFunc(ctx)
+func (h *HandlerFuncAdapter) Handle(ctx *Context) {
+	h.handlerFunc(ctx)
 }
 
 func (g *RouteGroup) HandleFunc(path string, method string, handlerFunc HandlerFunc) {

@@ -34,24 +34,16 @@ func (s *Server) Run(addr string) error {
 		}
 
 		mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
-			ctx := NewContext(r)
-
-			println("URL.Path", r.URL.Path)
-			println("RequestURI", r.RequestURI)
-
-			var result any
+			ctx := NewContext(r) // 创建上下文
 
 			if factory.IsFunc {
-				// 处理函数处理器
-				result = factory.HandlerFunc(ctx)
+				factory.HandlerFunc(ctx) // 调用函数 handler
 			} else {
-				// 处理结构体处理器
-				// 创建新的处理器实例
-				handlerValue := reflect.New(factory.HandlerType)
+				// 处理结构体 handler
+				handlerValue := reflect.New(factory.HandlerType) // 创建新的处理器实例
 				handlerInterface := handlerValue.Interface()
 
-				// 确保实现了 HandlerInterface
-				handler, ok := handlerInterface.(HandlerInterface)
+				handler, ok := handlerInterface.(HandlerInterface) // 确保实现了 HandlerInterface
 				if !ok {
 					w.WriteHeader(http.StatusInternalServerError)
 					w.Write([]byte("Handler does not implement HandlerInterface"))
@@ -87,9 +79,10 @@ func (s *Server) Run(addr string) error {
 					}
 				}
 
-				result = handler.Handle(ctx)
+				handler.Handle(ctx)
 			}
 
+			var result any = ctx.result
 			s.writeResponse(w, result, ctx)
 		})
 	}

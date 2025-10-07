@@ -23,10 +23,11 @@ type CreateTodoRequest struct {
 	Todo
 }
 
-func (r *CreateTodoRequest) Handle(ctx *rest.Context) any {
+func (r *CreateTodoRequest) Handle(ctx *rest.Context) {
 	// 验证必填字段
 	if r.Title == "" {
-		return Error(INPUT_ERROR, "Title is required")
+		ctx.Result(Error(INPUT_ERROR, "Title is required"))
+		return
 	}
 
 	// 创建新的 Todo
@@ -41,29 +42,30 @@ func (r *CreateTodoRequest) Handle(ctx *rest.Context) any {
 	nextID++
 	todos = append(todos, newTodo)
 
-	return Success(newTodo)
+	ctx.Result(newTodo)
 }
 
 type GetTodosRequest struct{}
 
-func (r *GetTodosRequest) Handle(ctx *rest.Context) any {
-	return Success(PageData{
+func (r *GetTodosRequest) Handle(ctx *rest.Context) {
+	ctx.Result(Success(PageData{
 		Total: len(todos),
 		List:  todos,
-	})
+	}))
 }
 
 type GetTodoByIDRequest struct {
 	ID int `path:"id"`
 }
 
-func (r *GetTodoByIDRequest) Handle(ctx *rest.Context) any {
+func (r *GetTodoByIDRequest) Handle(ctx *rest.Context) {
 	for _, todo := range todos {
 		if todo.ID == r.ID {
-			return Success(todo)
+			ctx.Result(Success(todo))
+			return
 		}
 	}
-	return Error(INPUT_ERROR, "Todo not found")
+	ctx.Result(Error(INPUT_ERROR, "Todo not found"))
 }
 
 func init() {
@@ -90,8 +92,8 @@ func init() {
 func main() {
 	s := rest.NewServer()
 
-	s.GETFunc("/healthz", func(ctx *rest.Context) any {
-		return Success("Hello, World!")
+	s.GETFunc("/healthz", func(ctx *rest.Context) {
+		ctx.Result(Success("Hello, World!"))
 	})
 	s.POST("/todos", &CreateTodoRequest{})
 	s.GET("/todos", &GetTodosRequest{})

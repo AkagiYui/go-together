@@ -3,13 +3,14 @@ package rest
 import (
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 type Request struct {
-	Method string
+	Method string // GET, POST, PUT, DELETE, ...
 
 	Endpoint string // 不包含 query string
-	URI      string
+	URI      string // 包含 query string
 
 	Body          []byte
 	URL           url.URL
@@ -27,6 +28,7 @@ type Request struct {
 
 type Response struct {
 	statusCode int
+	result     any
 }
 
 type Context struct {
@@ -34,12 +36,16 @@ type Context struct {
 	Response
 }
 
-func (c *Context) Status(code int) {
+func (c *Response) Status(code int) {
 	c.statusCode = code
 }
 
+func (c *Response) Result(result any) {
+	c.result = result
+}
+
 func NewContext(r *http.Request) *Context {
-	return &Context{
+	ctx := &Context{
 		Request: Request{
 			Method: r.Method,
 
@@ -63,4 +69,21 @@ func NewContext(r *http.Request) *Context {
 			statusCode: http.StatusOK,
 		},
 	}
+
+	// 填充 Header（多值以逗号拼接）
+	for k, vs := range r.Header {
+		if len(vs) > 0 {
+			ctx.Request.Header[k] = strings.Join(vs, ",")
+		}
+	}
+
+	// 填充 Query（多值以逗号拼接）
+	q := r.URL.Query()
+	for k, vs := range q {
+		if len(vs) > 0 {
+			ctx.Request.Query[k] = strings.Join(vs, ",")
+		}
+	}
+	
+	return ctx
 }
