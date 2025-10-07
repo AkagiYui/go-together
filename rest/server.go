@@ -37,6 +37,13 @@ func (s *Server) Run(addr string) error {
 		mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 			ctx := NewContext(r, &w) // 创建上下文
 
+			defer func() {
+				if err := recover(); err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					w.Write([]byte("Internal Server Error"))
+				}
+			}()
+
 			if factory.IsFunc {
 				factory.HandlerFunc(ctx) // 调用函数 handler
 			} else {
@@ -69,8 +76,10 @@ func (s *Server) Run(addr string) error {
 						return
 					}
 					ctx.Body = body
+
+					contentType := strings.ToLower(strings.Trim(r.Header.Get("Content-Type"), " "))
 					if len(body) > 0 {
-						if strings.HasPrefix(strings.Trim(r.Header.Get("Content-Type"), " "), "application/json") {
+						if strings.HasPrefix(contentType, "application/json") {
 							if err := json.Unmarshal(body, handlerInterface); err != nil {
 								w.WriteHeader(http.StatusBadRequest)
 								w.Write([]byte("Invalid JSON format: " + err.Error()))
