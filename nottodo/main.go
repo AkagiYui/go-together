@@ -69,6 +69,31 @@ func (r *GetTodoByIDRequest) Handle(ctx *rest.Context) {
 	ctx.Result(model.Error(model.INPUT_ERROR, "Todo not found"))
 }
 
+type UpdateTodoRequest struct {
+	ID int `path:"id"`
+	Todo
+}
+
+func (r *UpdateTodoRequest) Handle(ctx *rest.Context) {
+	for i, todo := range todos {
+		if todo.ID == r.ID {
+			oriTodo := todos[i]
+
+			// 修整请求参数
+			if r.Todo.Title == "" {
+				r.Todo.Title = oriTodo.Title
+			}
+			r.Todo.ID = oriTodo.ID
+			r.Todo.CreatedAt = oriTodo.CreatedAt
+
+			todos[i] = r.Todo
+			ctx.Result(model.Success(todos[i]))
+			return
+		}
+	}
+	ctx.Result(model.Error(model.INPUT_ERROR, "Todo not found"))
+}
+
 func init() {
 	// 初始化一些示例数据
 	todos = []Todo{
@@ -96,15 +121,17 @@ func main() {
 	s.GETFunc("/healthz", func(ctx *rest.Context) {
 		ctx.Result(model.Success("Hello, World!"))
 	})
-	s.POST("/todos", &CreateTodoRequest{})
 	s.GET("/todos", &GetTodosRequest{})
 	s.GET("/todos/{id}", &GetTodoByIDRequest{})
+	s.POST("/todos", &CreateTodoRequest{})
+	s.PUT("/todos/{id}", &UpdateTodoRequest{})
 
 	println("🚀 Server starting on http://localhost:8080")
 	println("📚 API Documentation:")
-	println("  POST   /todos        - 创建Todo")
 	println("  GET    /todos        - 获取所有Todo")
 	println("  GET    /todos/{id}   - 获取指定ID的Todo")
+	println("  POST   /todos        - 创建Todo")
+	println("  PUT    /todos/{id}   - 更新指定ID的Todo")
 
 	if err := s.Run(":8080"); err != nil {
 		panic(err)
