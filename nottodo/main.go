@@ -90,7 +90,7 @@ func init() {
 func main() {
 	s := rest.NewServer()
 
-	s.GETFunc("/healtz", func(ctx *rest.Context) any {
+	s.GETFunc("/healthz", func(ctx *rest.Context) any {
 		return Success("Hello, World!")
 	})
 	s.POST("/todos", &CreateTodoRequest{})
