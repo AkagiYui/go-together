@@ -3,7 +3,6 @@ package rest
 import (
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 type Request struct {
@@ -18,12 +17,11 @@ type Request struct {
 	RemoteAddr    string
 	ContentLength int64
 
-	Params map[string]string
-	Query  map[string]string
-	Header map[string]string
-	Form   map[string]string
+	PathValues url.Values
+	Query      url.Values
+	Header     http.Header
 
-	header http.Header
+	Form url.Values
 }
 
 type Response struct {
@@ -61,12 +59,11 @@ func NewContext(r *http.Request, w *http.ResponseWriter) *Context {
 			RemoteAddr:    r.RemoteAddr,
 			ContentLength: r.ContentLength,
 
-			Params: make(map[string]string),
-			Header: make(map[string]string),
-			Query:  make(map[string]string),
-			Form:   make(map[string]string),
+			PathValues: make(url.Values),
+			Header:     r.Header,
+			Query:      r.URL.Query(),
 
-			header: r.Header,
+			Form: nil, // Form 暂不处理
 		},
 		Response: Response{
 			statusCode: http.StatusOK,
@@ -75,20 +72,5 @@ func NewContext(r *http.Request, w *http.ResponseWriter) *Context {
 		OriginalRequest: r,
 	}
 
-	// 填充 Header（多值以逗号拼接）
-	for k, vs := range r.Header {
-		if len(vs) > 0 {
-			ctx.Request.Header[k] = strings.Join(vs, ",")
-		}
-	}
-
-	// 填充 Query（多值以逗号拼接）
-	q := r.URL.Query()
-	for k, vs := range q {
-		if len(vs) > 0 {
-			ctx.Request.Query[k] = strings.Join(vs, ",")
-		}
-	}
-	
 	return ctx
 }

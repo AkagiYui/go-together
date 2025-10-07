@@ -82,8 +82,7 @@ func (s *Server) Run(addr string) error {
 				handler.Handle(ctx)
 			}
 
-			var result any = ctx.result
-			s.writeResponse(w, result, ctx)
+			s.writeResponse(w, ctx.result, ctx)
 		})
 	}
 
