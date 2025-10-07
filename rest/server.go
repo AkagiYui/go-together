@@ -29,7 +29,7 @@ func (s *Server) Run(addr string) error {
 	// 处理所有注册的处理器
 	for _, factory := range s.Factories {
 		// 构建路由路径
-		pattern := factory.Path
+		pattern := s.RouteGroup.BasePath + factory.Path
 		if factory.Method != "" {
 			pattern = factory.Method + " " + pattern
 		}
