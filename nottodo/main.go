@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/akagiyui/go-together/common/model"
@@ -42,8 +43,7 @@ func (r *CreateTodoRequest) Handle(ctx *rest.Context) {
 
 	nextID++
 	todos = append(todos, newTodo)
-
-	ctx.Result(newTodo)
+	ctx.Result(model.Success(newTodo))
 }
 
 type GetTodosRequest struct{}
@@ -66,7 +66,8 @@ func (r *GetTodoByIDRequest) Handle(ctx *rest.Context) {
 			return
 		}
 	}
-	ctx.Result(model.Error(model.INPUT_ERROR, "Todo not found"))
+	ctx.Status(http.StatusNotFound)
+	ctx.Result(model.Error(model.NOT_FOUND, "Todo not found"))
 }
 
 type UpdateTodoRequest struct {
@@ -91,7 +92,24 @@ func (r *UpdateTodoRequest) Handle(ctx *rest.Context) {
 			return
 		}
 	}
-	ctx.Result(model.Error(model.INPUT_ERROR, "Todo not found"))
+	ctx.Status(http.StatusNotFound)
+	ctx.Result(model.Error(model.SUCCESS, "Todo not found"))
+}
+
+type DeleteTodoRequest struct {
+	ID int `path:"id"`
+}
+
+func (r *DeleteTodoRequest) Handle(ctx *rest.Context) {
+	for i, todo := range todos {
+		if todo.ID == r.ID {
+			todos = append(todos[:i], todos[i+1:]...)
+			ctx.Result(model.Success(todo))
+			return
+		}
+	}
+	ctx.Status(http.StatusNotFound)
+	ctx.Result(model.Error(model.SUCCESS, "Todo not found"))
 }
 
 func init() {
@@ -125,6 +143,7 @@ func main() {
 	s.GET("/todos/{id}", &GetTodoByIDRequest{})
 	s.POST("/todos", &CreateTodoRequest{})
 	s.PUT("/todos/{id}", &UpdateTodoRequest{})
+	s.DELETE("/todos/{id}", &DeleteTodoRequest{})
 
 	println("🚀 Server starting on http://localhost:8080")
 	println("📚 API Documentation:")
@@ -132,6 +151,7 @@ func main() {
 	println("  GET    /todos/{id}   - 获取指定ID的Todo")
 	println("  POST   /todos        - 创建Todo")
 	println("  PUT    /todos/{id}   - 更新指定ID的Todo")
+	println("  DELETE /todos/{id}   - 删除指定ID的Todo")
 
 	if err := s.Run(":8080"); err != nil {
 		panic(err)

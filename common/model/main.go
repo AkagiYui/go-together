@@ -1,25 +1,29 @@
 package model
 
 const (
-	INPUT_ERROR = 10001
+	SUCCESS = iota + 10000
+	INPUT_ERROR
+	NOT_FOUND
 )
 
 type GeneralResponse struct {
 	Message string `json:"message"`
-	Data    any    `json:"data,omitempty"`
-	Code    int    `json:"code,omitempty"`
+	Data    any    `json:"data"`
+	Code    int    `json:"code"`
 }
 
 func Success(data any) GeneralResponse {
 	return GeneralResponse{
-		Message: "success",
+		Message: "",
 		Data:    data,
+		Code:    SUCCESS,
 	}
 }
 
 func Error(code int, message string) GeneralResponse {
 	return GeneralResponse{
 		Message: message,
+		Data:    nil,
 		Code:    code,
 	}
 }
