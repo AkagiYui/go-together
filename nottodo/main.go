@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/rest"
 )
 
@@ -26,7 +27,7 @@ type CreateTodoRequest struct {
 func (r *CreateTodoRequest) Handle(ctx *rest.Context) {
 	// 验证必填字段
 	if r.Title == "" {
-		ctx.Result(Error(INPUT_ERROR, "Title is required"))
+		ctx.Result(model.Error(model.INPUT_ERROR, "Title is required"))
 		return
 	}
 
@@ -48,7 +49,7 @@ func (r *CreateTodoRequest) Handle(ctx *rest.Context) {
 type GetTodosRequest struct{}
 
 func (r *GetTodosRequest) Handle(ctx *rest.Context) {
-	ctx.Result(Success(PageData{
+	ctx.Result(model.Success(model.PageData{
 		Total: len(todos),
 		List:  todos,
 	}))
@@ -61,11 +62,11 @@ type GetTodoByIDRequest struct {
 func (r *GetTodoByIDRequest) Handle(ctx *rest.Context) {
 	for _, todo := range todos {
 		if todo.ID == r.ID {
-			ctx.Result(Success(todo))
+			ctx.Result(model.Success(todo))
 			return
 		}
 	}
-	ctx.Result(Error(INPUT_ERROR, "Todo not found"))
+	ctx.Result(model.Error(model.INPUT_ERROR, "Todo not found"))
 }
 
 func init() {
@@ -93,7 +94,7 @@ func main() {
 	s := rest.NewServer()
 
 	s.GETFunc("/healthz", func(ctx *rest.Context) {
-		ctx.Result(Success("Hello, World!"))
+		ctx.Result(model.Success("Hello, World!"))
 	})
 	s.POST("/todos", &CreateTodoRequest{})
 	s.GET("/todos", &GetTodosRequest{})

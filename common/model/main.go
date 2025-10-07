@@ -1,4 +1,4 @@
-package main
+package model
 
 const (
 	INPUT_ERROR = 10001
