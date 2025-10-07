@@ -34,6 +34,9 @@ type Response struct {
 type Context struct {
 	Request
 	Response
+
+	OriginalWriter  *http.ResponseWriter
+	OriginalRequest *http.Request
 }
 
 func (c *Response) Status(code int) {
@@ -44,7 +47,7 @@ func (c *Response) Result(result any) {
 	c.result = result
 }
 
-func NewContext(r *http.Request) *Context {
+func NewContext(r *http.Request, w *http.ResponseWriter) *Context {
 	ctx := &Context{
 		Request: Request{
 			Method: r.Method,
@@ -68,6 +71,8 @@ func NewContext(r *http.Request) *Context {
 		Response: Response{
 			statusCode: http.StatusOK,
 		},
+		OriginalWriter:  w,
+		OriginalRequest: r,
 	}
 
 	// 填充 Header（多值以逗号拼接）
