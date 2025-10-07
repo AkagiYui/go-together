@@ -35,7 +35,7 @@ func (s *Server) Run(addr string) error {
 		}
 
 		mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
-			ctx := NewContext(r, &w) // 创建上下文
+			ctx := NewContext(r, &w, s) // 创建上下文
 
 			defer func() {
 				if err := recover(); err != nil {

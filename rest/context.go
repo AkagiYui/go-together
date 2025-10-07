@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"sync"
 )
 
 type Request struct {
-	Method string // GET, POST, PUT, DELETE, ...
-
+	Method   string // GET, POST, PUT, DELETE, ...
 	Endpoint string // 不包含 query string
 	URI      string // 包含 query string
 
@@ -36,6 +36,11 @@ type Context struct {
 
 	OriginalWriter  *http.ResponseWriter
 	OriginalRequest *http.Request
+
+	memoryLock sync.RWMutex
+	Memory     map[any]any
+
+	Server *Server
 }
 
 func (c *Response) Status(code int) {
@@ -46,7 +51,24 @@ func (c *Response) Result(result any) {
 	c.result = result
 }
 
-func NewContext(r *http.Request, w *http.ResponseWriter) *Context {
+// Get returns the value for the given key, ie: (value, true).
+// If the value does not exist it returns (nil, false)
+func (c *Context) Get(key any) (value any, exists bool) {
+	c.memoryLock.RLock()
+	defer c.memoryLock.RUnlock()
+	value, exists = c.Memory[key]
+	return
+}
+
+// Set is used to store a new key/value pair exclusively for this context.
+// It also lazy initializes  c.Keys if it was not used previously.
+func (c *Context) Set(key any, value any) {
+	c.memoryLock.Lock()
+	defer c.memoryLock.Unlock()
+	c.Memory[key] = value
+}
+
+func NewContext(r *http.Request, w *http.ResponseWriter, s *Server) *Context {
 	ctx := &Context{
 		Request: Request{
 			Method: r.Method,
@@ -69,8 +91,11 @@ func NewContext(r *http.Request, w *http.ResponseWriter) *Context {
 		Response: Response{
 			statusCode: http.StatusOK,
 		},
+
 		OriginalWriter:  w,
 		OriginalRequest: r,
+		Memory:          make(map[any]any),
+		Server:          s,
 	}
 
 	// 解析路径参数
