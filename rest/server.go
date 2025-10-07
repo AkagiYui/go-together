@@ -131,24 +131,39 @@ func (s *Server) writeResponse(w http.ResponseWriter, result any, ctx *Context) 
 
 // parseParams 解析query参数和path参数和header参数到结构体字段
 func parseParams(ctx *Context, handlerInterface interface{}) (needParseBody bool, err error) {
-	needParseBody = false
 	handlerValue := reflect.ValueOf(handlerInterface)
 	if handlerValue.Kind() == reflect.Ptr {
 		handlerValue = handlerValue.Elem()
 	}
-	handlerType := handlerValue.Type()
+	needParseBody, err = parseStructFields(handlerValue, ctx)
+	return
+}
 
+// parseStructFields 递归解析结构体字段
+func parseStructFields(structValue reflect.Value, ctx *Context) (needParseBody bool, err error) {
 	pathParams := ctx.PathParams
 	queryValues := ctx.Query
 	headers := ctx.Header
 
-	for i := 0; i < handlerType.NumField(); i++ {
-		field := handlerType.Field(i)
-		fieldValue := handlerValue.Field(i)
-
-		if !needParseBody {
-			needParseBody = field.Tag.Get("json") != "" || field.Tag.Get("form") != "" || field.Tag.Get("body") != ""
+	if structValue.Kind() == reflect.Ptr {
+		if structValue.IsNil() {
+			return false, nil
 		}
+		structValue = structValue.Elem()
+	}
+
+	if structValue.Kind() != reflect.Struct {
+		return false, nil
+	}
+
+	structType := structValue.Type()
+
+	for i := 0; i < structType.NumField(); i++ {
+		field := structType.Field(i)
+		fieldValue := structValue.Field(i)
+
+		// 检查是否需要解析请求体
+		needParseBody = needParseBody || field.Tag.Get("json") != "" || field.Tag.Get("form") != "" || field.Tag.Get("body") != ""
 
 		// 检查字段是否可设置
 		if !fieldValue.CanSet() {
@@ -180,6 +195,23 @@ func parseParams(ctx *Context, handlerInterface interface{}) (needParseBody bool
 					return
 				}
 			}
+		}
+
+		// 递归处理嵌套结构体
+		fieldType := field.Type
+		if fieldType.Kind() == reflect.Ptr {
+			if fieldValue.IsNil() {
+				fieldValue.Set(reflect.New(fieldType.Elem())) // 为nil的指针字段创建新实例
+			}
+			fieldType = fieldType.Elem()
+		}
+
+		if fieldType.Kind() == reflect.Struct {
+			childNeedParseBody, childErr := parseStructFields(fieldValue, ctx)
+			if childErr != nil {
+				return needParseBody, childErr
+			}
+			needParseBody = needParseBody || childNeedParseBody
 		}
 	}
 
