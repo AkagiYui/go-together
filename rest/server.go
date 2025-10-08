@@ -42,7 +42,11 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 				}
 			}()
 
-			factory.Runner(ctx) // dispatch request
+			// dispatch request
+			for _, runner := range factory.RunnerChain {
+				runner(ctx)
+			}
+
 			server.writeResponse(w, ctx.result, ctx)
 		})
 	}

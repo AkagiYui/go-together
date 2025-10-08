@@ -16,22 +16,26 @@ type HandlerInterface interface {
 
 // HandlerFactory 用于创建 handler 实例的工厂
 type HandlerFactory struct {
-	Path   string
-	Method string
-	Runner func(*Context)
+	Path        string
+	Method      string
+	RunnerChain []func(*Context)
 }
 
 // Handle 接受结构体类型，每次请求时创建新实例
-func (g *RouteGroup) Handle(path string, method string, handlerType HandlerInterface) {
-	t := reflect.TypeOf(handlerType)
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
-	}
+func (g *RouteGroup) Handle(path string, method string, handlerTypes ...HandlerInterface) {
 
 	factory := HandlerFactory{
-		Path:   path,
-		Method: method,
-		Runner: func(ctx *Context) {
+		Path:        path,
+		Method:      method,
+		RunnerChain: make([]func(*Context), len(handlerTypes)),
+	}
+
+	for i, handlerType := range handlerTypes {
+		t := reflect.TypeOf(handlerType)
+		if t.Kind() == reflect.Ptr {
+			t = t.Elem()
+		}
+		factory.RunnerChain[i] = func(ctx *Context) {
 			// 创建新的 HandlerInterface 实例
 			handlerValue := reflect.New(t)
 			handlerInterface := handlerValue.Interface()
@@ -75,16 +79,22 @@ func (g *RouteGroup) Handle(path string, method string, handlerType HandlerInter
 			}
 
 			handler.Handle(ctx) // 调用 handler
-		},
+		}
 	}
+
 	g.Factories = append(g.Factories, factory)
 }
 
-func (g *RouteGroup) HandleFunc(path string, method string, handlerFunc HandlerFunc) {
+func (g *RouteGroup) HandleFunc(path string, method string, handlerFuncs ...HandlerFunc) {
 	factory := HandlerFactory{
-		Path:   path,
-		Method: method,
-		Runner: handlerFunc,
+		Path:        path,
+		Method:      method,
+		RunnerChain: make([]func(*Context), len(handlerFuncs)),
 	}
+
+	for i, handlerFunc := range handlerFuncs {
+		factory.RunnerChain[i] = handlerFunc
+	}
+
 	g.Factories = append(g.Factories, factory)
 }
