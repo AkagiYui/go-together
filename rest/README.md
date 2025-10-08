@@ -1,4 +1,8 @@
-一个对 go1.22 ServeMux 进行封装，我自己用的 [REST](https://en.wikipedia.org/wiki/REST) 框架，支持路径参数、查询参数、头参数、JSON 参数、表单参数等的自动绑定。
+一个对 Go1.22 ServeMux 进行封装，我自己用的 [REST](https://en.wikipedia.org/wiki/REST) 框架。
+
+支持路径参数、查询参数、请求头、JSON请求体、表单参数等的自动绑定。
+
+路由语法与 ServeMux 保持一致，本库未重定义路由语法。
 
 ```golang
 package main

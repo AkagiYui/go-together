@@ -14,13 +14,6 @@ type Server struct {
 	RouteGroup
 }
 
-func NewRouteGroup(basePath string) RouteGroup {
-	return RouteGroup{
-		Factories: make([]HandlerFactory, 0),
-		BasePath:  basePath,
-	}
-}
-
 func NewServer() *Server {
 	return &Server{
 		RouteGroup: NewRouteGroup(""),
@@ -29,17 +22,20 @@ func NewServer() *Server {
 
 func (s *Server) Run(addr string) error {
 	mux := http.NewServeMux()
+	registerRouteGroup(mux, &s.RouteGroup, s) // 处理所有注册的处理器
+	return http.ListenAndServe(addr, mux)
+}
 
-	// 处理所有注册的处理器
-	for _, factory := range s.Factories {
+func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
+	for _, factory := range group.Factories {
 		// 构建路由路径
-		pattern := s.RouteGroup.BasePath + factory.Path
+		pattern := group.BasePath + factory.Path
 		if factory.Method != "" {
 			pattern = factory.Method + " " + pattern
 		}
 
 		mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
-			ctx := NewContext(r, &w, s) // 创建上下文
+			ctx := NewContext(r, &w, server) // 创建上下文
 
 			defer func() {
 				if err := recover(); err != nil {
@@ -96,11 +92,13 @@ func (s *Server) Run(addr string) error {
 				handler.Handle(ctx)
 			}
 
-			s.writeResponse(w, ctx.result, ctx)
+			server.writeResponse(w, ctx.result, ctx)
 		})
 	}
 
-	return http.ListenAndServe(addr, mux)
+	for _, childGroup := range group.ChildGroups {
+		registerRouteGroup(mux, childGroup, server)
+	}
 }
 
 // writeResponse 统一处理响应写入

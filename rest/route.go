@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"net/http"
 	"reflect"
 )
 
@@ -18,11 +17,6 @@ type HandlerFactory struct {
 	HandlerType reflect.Type
 	HandlerFunc HandlerFunc // 用于存储函数处理器
 	IsFunc      bool        // 标识是否为函数处理器
-}
-
-type RouteGroup struct {
-	Factories []HandlerFactory
-	BasePath  string
 }
 
 // Handle 接受结构体类型，每次请求时创建新实例
@@ -60,37 +54,4 @@ func (g *RouteGroup) HandleFunc(path string, method string, handlerFunc HandlerF
 		IsFunc:      true,
 	}
 	g.Factories = append(g.Factories, factory)
-}
-
-func (g *RouteGroup) GET(path string, handlerType HandlerInterface) {
-	g.Handle(path, http.MethodGet, handlerType)
-}
-
-func (g *RouteGroup) POST(path string, handlerType HandlerInterface) {
-	g.Handle(path, http.MethodPost, handlerType)
-}
-
-func (g *RouteGroup) PUT(path string, handlerType HandlerInterface) {
-	g.Handle(path, http.MethodPut, handlerType)
-}
-
-func (g *RouteGroup) DELETE(path string, handlerType HandlerInterface) {
-	g.Handle(path, http.MethodDelete, handlerType)
-}
-
-// 便捷方法：支持 HandlerFunc 的 HTTP 方法
-func (g *RouteGroup) GETFunc(path string, handlerFunc HandlerFunc) {
-	g.HandleFunc(path, http.MethodGet, handlerFunc)
-}
-
-func (g *RouteGroup) POSTFunc(path string, handlerFunc HandlerFunc) {
-	g.HandleFunc(path, http.MethodPost, handlerFunc)
-}
-
-func (g *RouteGroup) PUTFunc(path string, handlerFunc HandlerFunc) {
-	g.HandleFunc(path, http.MethodPut, handlerFunc)
-}
-
-func (g *RouteGroup) DELETEFunc(path string, handlerFunc HandlerFunc) {
-	g.HandleFunc(path, http.MethodDelete, handlerFunc)
 }
