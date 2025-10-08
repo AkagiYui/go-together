@@ -40,7 +40,8 @@ type Context struct {
 	memoryLock sync.RWMutex
 	Memory     map[any]any
 
-	Server *Server
+	Server    *Server
+	isAborted bool
 }
 
 func (c *Response) Status(code int) {
@@ -66,6 +67,14 @@ func (c *Context) Set(key any, value any) {
 	c.memoryLock.Lock()
 	defer c.memoryLock.Unlock()
 	c.Memory[key] = value
+}
+
+func (c *Context) Abort() {
+	c.isAborted = true
+}
+
+func (c *Context) IsAborted() bool {
+	return c.isAborted
 }
 
 func NewContext(r *http.Request, w *http.ResponseWriter, s *Server) *Context {
@@ -96,6 +105,7 @@ func NewContext(r *http.Request, w *http.ResponseWriter, s *Server) *Context {
 		OriginalRequest: r,
 		Memory:          make(map[any]any),
 		Server:          s,
+		isAborted:       false,
 	}
 
 	// 解析路径参数

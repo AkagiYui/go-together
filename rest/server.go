@@ -44,6 +44,9 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 
 			// dispatch request
 			for _, runner := range factory.RunnerChain {
+				if ctx.IsAborted() {
+					break
+				}
 				runner(ctx)
 			}
 
