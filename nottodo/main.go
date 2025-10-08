@@ -11,11 +11,15 @@ func main() {
 	s.GETFunc("/healthz", func(ctx *rest.Context) {
 		ctx.Result(model.Success("Hello, World!"))
 	})
-	s.GET("/todos", &GetTodosRequest{})
-	s.GET("/todos/{id}", &GetTodoByIDRequest{})
-	s.POST("/todos", &CreateTodoRequest{})
-	s.PUT("/todos/{id}", &UpdateTodoRequest{})
-	s.DELETE("/todos/{id}", &DeleteTodoRequest{})
+
+	todoGroup := s.Group("/todos")
+	{
+		todoGroup.GET("", &GetTodosRequest{})
+		todoGroup.GET("/{id}", &GetTodoByIDRequest{})
+		todoGroup.POST("", &CreateTodoRequest{})
+		todoGroup.PUT("/{id}", &UpdateTodoRequest{})
+		todoGroup.DELETE("/{id}", &DeleteTodoRequest{})
+	}
 
 	println("🚀 Server starting on http://localhost:8080")
 	println("📚 API Documentation:")
