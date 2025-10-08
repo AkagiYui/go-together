@@ -1,7 +1,11 @@
 package rest
 
 import (
+	"encoding/json"
+	"io"
+	"net/http"
 	"reflect"
+	"strings"
 )
 
 type HandlerFunc func(*Context)
@@ -10,13 +14,11 @@ type HandlerInterface interface {
 	Handle(*Context)
 }
 
-// HandlerFactory 用于创建处理器实例的工厂
+// HandlerFactory 用于创建 handler 实例的工厂
 type HandlerFactory struct {
-	Path        string
-	Method      string
-	HandlerType reflect.Type
-	HandlerFunc HandlerFunc // 用于存储函数处理器
-	IsFunc      bool        // 标识是否为函数处理器
+	Path   string
+	Method string
+	Runner func(*Context)
 }
 
 // Handle 接受结构体类型，每次请求时创建新实例
@@ -27,31 +29,62 @@ func (g *RouteGroup) Handle(path string, method string, handlerType HandlerInter
 	}
 
 	factory := HandlerFactory{
-		Path:        path,
-		Method:      method,
-		HandlerType: t,
+		Path:   path,
+		Method: method,
+		Runner: func(ctx *Context) {
+			// 创建新的 HandlerInterface 实例
+			handlerValue := reflect.New(t)
+			handlerInterface := handlerValue.Interface()
+
+			// 确保实现了 HandlerInterface
+			handler, ok := handlerInterface.(HandlerInterface)
+			if !ok {
+				ctx.Status(http.StatusInternalServerError)
+				ctx.Result("Handler does not implement HandlerInterface")
+				return
+			}
+
+			// 解析 query/path/header 参数
+			needParseBody, err := parseParams(ctx, handlerInterface)
+			if err != nil {
+				ctx.Status(http.StatusBadRequest)
+				ctx.Result("Failed to parse parameters: " + err.Error())
+				return
+			}
+
+			// 如果需要解析请求体，尝试解析 JSON 到结构体
+			if needParseBody {
+				body, err := io.ReadAll(ctx.OriginalRequest.Body)
+				if err != nil {
+					ctx.Status(http.StatusBadRequest)
+					ctx.Result("Failed to read request body")
+					return
+				}
+				ctx.Body = body
+
+				contentType := strings.ToLower(strings.Trim(ctx.Header.Get("Content-Type"), " "))
+				if len(body) > 0 {
+					if strings.HasPrefix(contentType, "application/json") {
+						if err := json.Unmarshal(body, handlerInterface); err != nil {
+							ctx.Status(http.StatusBadRequest)
+							ctx.Result("Invalid JSON format: " + err.Error())
+							return
+						}
+					}
+				}
+			}
+
+			handler.Handle(ctx) // 调用 handler
+		},
 	}
 	g.Factories = append(g.Factories, factory)
 }
 
-// HandlerFuncAdapter 适配器结构体，用于将 HandlerFunc 转换为 HandlerInterface
-// 注意：这个结构体现在主要用于测试，实际运行时函数处理器直接调用，不使用适配器
-type HandlerFuncAdapter struct {
-	handlerFunc HandlerFunc
-}
-
-// Handle 实现 HandlerInterface 接口
-func (h *HandlerFuncAdapter) Handle(ctx *Context) {
-	h.handlerFunc(ctx)
-}
-
 func (g *RouteGroup) HandleFunc(path string, method string, handlerFunc HandlerFunc) {
-	// 直接存储函数处理器，不使用适配器
 	factory := HandlerFactory{
-		Path:        path,
-		Method:      method,
-		HandlerFunc: handlerFunc,
-		IsFunc:      true,
+		Path:   path,
+		Method: method,
+		Runner: handlerFunc,
 	}
 	g.Factories = append(g.Factories, factory)
 }

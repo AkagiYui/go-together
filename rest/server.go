@@ -3,11 +3,9 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"reflect"
 	"strconv"
-	"strings"
 )
 
 type Server struct {
@@ -22,7 +20,7 @@ func NewServer() *Server {
 
 func (s *Server) Run(addr string) error {
 	mux := http.NewServeMux()
-	registerRouteGroup(mux, &s.RouteGroup, s) // 处理所有注册的处理器
+	registerRouteGroup(mux, &s.RouteGroup, s) // 处理所有注册的 handler
 	return http.ListenAndServe(addr, mux)
 }
 
@@ -44,54 +42,7 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 				}
 			}()
 
-			if factory.IsFunc {
-				factory.HandlerFunc(ctx) // 调用函数 handler
-			} else {
-				// 处理结构体 handler
-				handlerValue := reflect.New(factory.HandlerType) // 创建新的处理器实例
-				handlerInterface := handlerValue.Interface()
-
-				handler, ok := handlerInterface.(HandlerInterface) // 确保实现了 HandlerInterface
-				if !ok {
-					w.WriteHeader(http.StatusInternalServerError)
-					w.Write([]byte("Handler does not implement HandlerInterface"))
-					return
-				}
-
-				// 解析 query 和 path 和 header 参数
-				needParseBody, err := parseParams(ctx, handlerInterface)
-				if err != nil {
-					w.WriteHeader(http.StatusBadRequest)
-					w.Write([]byte("Failed to parse parameters: " + err.Error()))
-					return
-				}
-
-				// 如果请求体不为空，尝试解析 JSON 到结构体
-				if needParseBody {
-					// 读取请求体
-					body, err := io.ReadAll(r.Body)
-					if err != nil {
-						w.WriteHeader(http.StatusBadRequest)
-						w.Write([]byte("Failed to read request body"))
-						return
-					}
-					ctx.Body = body
-
-					contentType := strings.ToLower(strings.Trim(r.Header.Get("Content-Type"), " "))
-					if len(body) > 0 {
-						if strings.HasPrefix(contentType, "application/json") {
-							if err := json.Unmarshal(body, handlerInterface); err != nil {
-								w.WriteHeader(http.StatusBadRequest)
-								w.Write([]byte("Invalid JSON format: " + err.Error()))
-								return
-							}
-						}
-					}
-				}
-
-				handler.Handle(ctx)
-			}
-
+			factory.Runner(ctx) // dispatch request
 			server.writeResponse(w, ctx.result, ctx)
 		})
 	}
