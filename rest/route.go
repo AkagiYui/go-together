@@ -18,7 +18,7 @@ type HandlerInterface interface {
 type HandlerFactory struct {
 	Path        string
 	Method      string
-	RunnerChain []func(*Context)
+	RunnerChain []HandlerFunc
 }
 
 // Handle 接受结构体类型，每次请求时创建新实例
@@ -27,7 +27,7 @@ func (g *RouteGroup) Handle(path string, method string, handlerTypes ...HandlerI
 	factory := HandlerFactory{
 		Path:        path,
 		Method:      method,
-		RunnerChain: make([]func(*Context), len(handlerTypes)),
+		RunnerChain: make([]HandlerFunc, len(handlerTypes)),
 	}
 
 	for i, handlerType := range handlerTypes {
@@ -96,12 +96,7 @@ func (g *RouteGroup) HandleFunc(path string, method string, handlerFuncs ...Hand
 	factory := HandlerFactory{
 		Path:        path,
 		Method:      method,
-		RunnerChain: make([]func(*Context), len(handlerFuncs)),
+		RunnerChain: handlerFuncs,
 	}
-
-	for i, handlerFunc := range handlerFuncs {
-		factory.RunnerChain[i] = handlerFunc
-	}
-
 	g.Factories = append(g.Factories, factory)
 }
