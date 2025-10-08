@@ -5,16 +5,27 @@ import (
 	"github.com/akagiyui/go-together/rest"
 )
 
+type TestRequest struct {
+	Test string `query:"test"`
+}
+
+func (r *TestRequest) Handle(ctx *rest.Context) {
+	println(r.Test)
+}
+
 func main() {
 	s := rest.NewServer()
 
 	s.GETFunc("/healthz", func(ctx *rest.Context) {
+		ctx.Set("test", "123\n")
 		ctx.Result(model.Success("Hello, World!"))
+	}, func(ctx *rest.Context) {
+		println(ctx.Get("test"))
 	})
 
 	todoGroup := s.Group("/todos")
 	{
-		todoGroup.GET("", &GetTodosRequest{})
+		todoGroup.GET("", &TestRequest{}, &GetTodosRequest{})
 		todoGroup.GET("/{id}", &GetTodoByIDRequest{})
 		todoGroup.POST("", &CreateTodoRequest{})
 		todoGroup.PUT("/{id}", &UpdateTodoRequest{})
