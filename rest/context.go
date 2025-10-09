@@ -40,8 +40,10 @@ type Context struct {
 	memoryLock sync.RWMutex
 	Memory     map[any]any
 
-	Server    *Server
-	isAborted bool
+	Server *Server
+
+	currentRunnerIndex int           // 私有索引：当前执行位置
+	runnerChain        []HandlerFunc // 当前请求的执行链
 }
 
 func (c *Response) Status(code int) {
@@ -70,11 +72,19 @@ func (c *Context) Set(key any, value any) {
 }
 
 func (c *Context) Abort() {
-	c.isAborted = true
+	// Move index to the end to ensure subsequent Next does not execute remaining handlers
+	c.currentRunnerIndex = len(c.runnerChain)
 }
 
 func (c *Context) IsAborted() bool {
-	return c.isAborted
+	return c.currentRunnerIndex >= len(c.runnerChain)
+}
+
+// Next executes the remaining handlers in the chain starting from the current index
+func (c *Context) Next() {
+	for c.currentRunnerIndex++; c.currentRunnerIndex < len(c.runnerChain); c.currentRunnerIndex++ {
+		c.runnerChain[c.currentRunnerIndex](c)
+	}
 }
 
 func NewContext(r *http.Request, w *http.ResponseWriter, s *Server) *Context {
@@ -103,9 +113,14 @@ func NewContext(r *http.Request, w *http.ResponseWriter, s *Server) *Context {
 
 		OriginalWriter:  w,
 		OriginalRequest: r,
-		Memory:          make(map[any]any),
-		Server:          s,
-		isAborted:       false,
+
+		memoryLock: sync.RWMutex{},
+		Memory:     make(map[any]any),
+
+		Server: s,
+
+		currentRunnerIndex: -1,
+		runnerChain:        nil,
 	}
 
 	// 解析路径参数
