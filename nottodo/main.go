@@ -23,7 +23,10 @@ func main() {
 		println(ctx.Get("test"))
 	})
 
-	todoGroup := s.Group("/todos")
+	todoGroup := s.Group("/todos", func(ctx *rest.Context) {
+		println("todos group")
+	})
+	todoGroup.Use(&TestRequest{})
 	{
 		todoGroup.GET("", &TestRequest{}, &GetTodosRequest{})
 		todoGroup.GET("/{id}", &GetTodoByIDRequest{})
