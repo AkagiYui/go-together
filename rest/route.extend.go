@@ -2,6 +2,7 @@ package rest
 
 import "net/http"
 
+// TODO 处理err返回值
 func (g *RouteGroup) GET(path string, handlerType ...HandlerInterface) {
 	g.Handle(path, http.MethodGet, handlerType...)
 }

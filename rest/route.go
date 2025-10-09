@@ -1,13 +1,5 @@
 package rest
 
-import (
-	"encoding/json"
-	"io"
-	"net/http"
-	"reflect"
-	"strings"
-)
-
 type HandlerFunc func(*Context)
 
 type HandlerInterface interface {
@@ -23,71 +15,17 @@ type HandlerFactory struct {
 
 // Handle 接受结构体类型，每次请求时创建新实例
 func (g *RouteGroup) Handle(path string, method string, handlerTypes ...HandlerInterface) error {
-
 	factory := HandlerFactory{
 		Path:        path,
 		Method:      method,
-		RunnerChain: make([]HandlerFunc, len(handlerTypes)),
+		RunnerChain: g.PreRunnerChain,
 	}
 
-	for i, handlerType := range handlerTypes {
-		t := reflect.TypeOf(handlerType)
-		if t.Kind() == reflect.Ptr {
-			t = t.Elem()
-		}
-
-		// 确保实现了 HandlerInterface
-		it := reflect.TypeOf((*HandlerInterface)(nil)).Elem()
-		tt := t // 每次迭代的“稳定类型副本”
-		if !reflect.PointerTo(tt).Implements(it) {
-			return ErrHandlerNotImplementHandlerInterface{}
-		}
-
-		factory.RunnerChain[i] = func(ctx *Context) {
-			// 创建新的 HandlerInterface 实例
-			handlerValue := reflect.New(tt)
-			handlerInterface := handlerValue.Interface()
-			handler, ok := handlerInterface.(HandlerInterface)
-			if !ok {
-				panic("Handler does not implement HandlerInterface")
-			}
-
-			// 解析 query/path/header 参数
-			needParseBody, err := parseParams(ctx, handlerInterface)
-			if err != nil {
-				ctx.Status(http.StatusBadRequest)
-				ctx.Result("Failed to parse parameters: " + err.Error())
-				return
-			}
-
-			// 如果需要解析请求体，尝试解析 JSON 到结构体
-			if needParseBody {
-				if ctx.Body == nil {
-					body, err := io.ReadAll(ctx.OriginalRequest.Body)
-					if err != nil {
-						ctx.Status(http.StatusBadRequest)
-						ctx.Result("Failed to read request body")
-						return
-					}
-					ctx.Body = body
-				}
-
-				contentType := strings.ToLower(strings.Trim(ctx.Header.Get("Content-Type"), " "))
-				if len(ctx.Body) > 0 {
-					if strings.HasPrefix(contentType, "application/json") {
-						if err := json.Unmarshal(ctx.Body, handlerInterface); err != nil {
-							ctx.Status(http.StatusBadRequest)
-							ctx.Result("Invalid JSON format: " + err.Error())
-							return
-						}
-					}
-				}
-			}
-
-			handler.Handle(ctx) // 调用 handler
-		}
+	runners, err := runnersFromHandlers(handlerTypes...)
+	if err != nil {
+		return err
 	}
-
+	factory.RunnerChain = append(factory.RunnerChain, runners...)
 	g.Factories = append(g.Factories, factory)
 	return nil
 }
@@ -96,7 +34,8 @@ func (g *RouteGroup) HandleFunc(path string, method string, handlerFuncs ...Hand
 	factory := HandlerFactory{
 		Path:        path,
 		Method:      method,
-		RunnerChain: handlerFuncs,
+		RunnerChain: g.PreRunnerChain,
 	}
+	factory.RunnerChain = append(factory.RunnerChain, handlerFuncs...)
 	g.Factories = append(g.Factories, factory)
 }
