@@ -28,6 +28,7 @@ type Request struct {
 type Response struct {
 	statusCode int
 	result     any
+	Headers    http.Header
 }
 
 type Context struct {
@@ -52,6 +53,10 @@ func (c *Response) Status(code int) {
 
 func (c *Response) Result(result any) {
 	c.result = result
+}
+
+func (c *Response) Header(key, value string) {
+	c.Headers.Add(key, value)
 }
 
 // Get returns the value for the given key, ie: (value, true).
@@ -109,6 +114,8 @@ func NewContext(r *http.Request, w *http.ResponseWriter, s *Server) *Context {
 		},
 		Response: Response{
 			statusCode: http.StatusOK,
+			result:     nil,
+			Headers:    make(http.Header),
 		},
 
 		OriginalWriter:  w,

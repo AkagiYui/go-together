@@ -54,7 +54,7 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, error
 					ctx.Body = body
 				}
 
-				contentType := strings.ToLower(strings.Trim(ctx.Header.Get("Content-Type"), " "))
+				contentType := strings.ToLower(strings.Trim(ctx.Request.Header.Get("Content-Type"), " "))
 				if len(ctx.Body) > 0 {
 					if strings.HasPrefix(contentType, "application/json") {
 						if err := json.Unmarshal(ctx.Body, handlerInterface); err != nil {
@@ -74,4 +74,3 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, error
 
 	return runners, nil
 }
-

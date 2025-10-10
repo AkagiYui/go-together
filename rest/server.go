@@ -37,6 +37,7 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 
 			defer func() {
 				if err := recover(); err != nil {
+					fmt.Println(err)
 					w.WriteHeader(http.StatusInternalServerError)
 					w.Write([]byte("Internal Server Error"))
 				}
@@ -45,6 +46,11 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 			// dispatch request
 			ctx.runnerChain = factory.RunnerChain
 			ctx.Next()
+			for key, values := range ctx.Response.Headers {
+				for _, value := range values {
+					w.Header().Add(key, value)
+				}
+			}
 
 			server.writeResponse(w, ctx.result, ctx)
 		})
@@ -102,7 +108,7 @@ func parseParams(ctx *Context, handlerInterface interface{}) (needParseBody bool
 func parseStructFields(structValue reflect.Value, ctx *Context) (needParseBody bool, err error) {
 	pathParams := ctx.PathParams
 	queryValues := ctx.Query
-	headers := ctx.Header
+	headers := ctx.Request.Header
 
 	if structValue.Kind() == reflect.Ptr {
 		if structValue.IsNil() {
