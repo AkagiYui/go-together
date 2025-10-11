@@ -34,8 +34,14 @@ func FlattenFactories(group *RouteGroup, preBasePath string, prePreRunnerChain [
 	thisPreRunnerChain := append(prePreRunnerChain, group.PreRunnerChain...) // 当前路由组的前置 handler 链
 	// 处理当前路由组的路由
 	for _, factory := range group.Factories {
-		factory.Path = thisBasePath + factory.Path                               // 上一级路由组的路径 + 当前路由组的路径 + 当前路由的路径
-		factory.RunnerChain = append(thisPreRunnerChain, factory.RunnerChain...) // 上一级路由组的前置 handler 链 + 当前路由组的前置 handler 链 + 当前路由的 handler 链
+		factory.Path = thisBasePath + factory.Path // 上一级路由组的路径 + 当前路由组的路径 + 当前路由的路径
+
+		// 合并当前路由组的前置 handler 链和当前路由的 handler 链
+		newRunnerChain := make([]HandlerFunc, 0, len(thisPreRunnerChain)+len(factory.RunnerChain))
+		newRunnerChain = append(newRunnerChain, thisPreRunnerChain...)
+		newRunnerChain = append(newRunnerChain, factory.RunnerChain...)
+		factory.RunnerChain = newRunnerChain
+
 		factories = append(factories, factory)
 	}
 	// 递归处理子路由组
