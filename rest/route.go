@@ -18,14 +18,14 @@ func (g *RouteGroup) Handle(path string, method string, handlerTypes ...HandlerI
 	factory := HandlerFactory{
 		Path:        path,
 		Method:      method,
-		RunnerChain: g.PreRunnerChain,
+		RunnerChain: nil,
 	}
 
 	runners, err := runnersFromHandlers(handlerTypes...)
 	if err != nil {
 		return err
 	}
-	factory.RunnerChain = append(factory.RunnerChain, runners...)
+	factory.RunnerChain = append(g.PreRunnerChain, runners...)
 	g.Factories = append(g.Factories, factory)
 	return nil
 }
