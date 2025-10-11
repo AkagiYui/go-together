@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/rest"
@@ -29,15 +31,38 @@ func CORSMiddleware() rest.HandlerFunc {
 			ctx.Abort()
 			return
 		}
+	}
+}
 
+func AuthMiddleware() rest.HandlerFunc {
+	return func(ctx *rest.Context) {
+		// 验证 token
+		token := ctx.Request.Header.Get("Authorization")
+		if token != "Bearer 123" {
+			ctx.Status(http.StatusUnauthorized)
+			ctx.Result(model.Error(model.UNAUTHORIZED, "Unauthorized"))
+			ctx.Abort()
+			return
+		}
+	}
+}
+
+func TimeConsumeMiddleware() rest.HandlerFunc {
+	return func(ctx *rest.Context) {
+		beforeTime := time.Now()
 		ctx.Next()
+		afterTime := time.Now()
+		consumeMs := afterTime.Sub(beforeTime).Milliseconds()
+		fmt.Printf("consume: %dms\n", consumeMs)
+		ctx.Response.Header("X-Time-Consume", fmt.Sprintf("%dms", consumeMs))
 	}
 }
 
 func main() {
 	s := rest.NewServer()
+	s.Debug = true
 
-	s.UseFunc(CORSMiddleware())
+	s.UseFunc(CORSMiddleware(), TimeConsumeMiddleware())
 
 	s.GETFunc("/healthz", func(ctx *rest.Context) {
 		ctx.Set("test", "123\n")
@@ -46,12 +71,10 @@ func main() {
 		println(ctx.Get("test"))
 	})
 
-	todoGroup := s.Group("/todos", func(ctx *rest.Context) {
-		println("todos group")
-	})
+	todoGroup := s.Group("/todos")
 	todoGroup.Use(&TestRequest{})
 	{
-		todoGroup.GET("", &TestRequest{}, &GetTodosRequest{})
+		todoGroup.GET("", &GetTodosRequest{})
 		todoGroup.GET("/{id}", &GetTodoByIDRequest{})
 		todoGroup.POST("", &CreateTodoRequest{})
 		todoGroup.PUT("/{id}", &UpdateTodoRequest{})

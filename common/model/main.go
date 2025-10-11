@@ -4,6 +4,7 @@ const (
 	SUCCESS = iota + 10000
 	INPUT_ERROR
 	NOT_FOUND
+	UNAUTHORIZED
 )
 
 type GeneralResponse struct {
