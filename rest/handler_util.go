@@ -20,14 +20,13 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, error
 		}
 
 		// 确保实现了 HandlerInterface
-		tt := t // 稳定副本
-		if !reflect.PointerTo(tt).Implements(it) {
+		if !reflect.PointerTo(t).Implements(it) {
 			return nil, ErrHandlerNotImplementHandlerInterface{}
 		}
 
 		runner := func(ctx *Context) {
 			// 创建新的 HandlerInterface 实例
-			handlerValue := reflect.New(tt)
+			handlerValue := reflect.New(t)
 			handlerInterface := handlerValue.Interface()
 			handler, ok := handlerInterface.(HandlerInterface)
 			if !ok {
