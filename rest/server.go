@@ -66,41 +66,6 @@ func (s *Server) Run(addr string) error {
 }
 
 func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
-	// for _, factory := range group.Factories {
-	// 	// 构建路由路径
-	// 	pattern := group.BasePath + factory.Path
-	// 	if factory.Method != "" {
-	// 		pattern = factory.Method + " " + pattern
-	// 	}
-
-	// 	mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
-	// 		ctx := NewContext(r, &w, server) // 创建上下文
-
-	// 		defer func() {
-	// 			if err := recover(); err != nil {
-	// 				fmt.Println(err)
-	// 				w.WriteHeader(http.StatusInternalServerError)
-	// 				w.Write([]byte("Internal Server Error"))
-	// 			}
-	// 		}()
-
-	// 		// dispatch request
-	// 		ctx.runnerChain = factory.RunnerChain
-	// 		ctx.Next()
-	// 		for key, values := range ctx.Response.Headers {
-	// 			for _, value := range values {
-	// 				w.Header().Add(key, value)
-	// 			}
-	// 		}
-
-	// 		server.writeResponse(w, ctx.result, ctx)
-	// 	})
-	// }
-
-	// for _, childGroup := range group.ChildGroups {
-	// 	registerRouteGroup(mux, childGroup, server)
-	// }
-
 	factories := FlattenFactories(group, "", make([]HandlerFunc, 0))
 	server.flattenFactories = factories
 	for _, factory := range factories {
@@ -111,7 +76,7 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 		}
 
 		mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
-			ctx := NewContext(r, &w, server) // 创建上下文
+			ctx := NewContext(r, &w, server, factory.RunnerChain) // 创建上下文
 
 			defer func() {
 				if err := recover(); err != nil {
@@ -122,14 +87,14 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 			}()
 
 			// dispatch request
-			ctx.runnerChain = factory.RunnerChain
 			ctx.Next()
+
+			// response
 			for key, values := range ctx.Response.Headers {
 				for _, value := range values {
 					w.Header().Add(key, value)
 				}
 			}
-
 			server.writeResponse(w, ctx.result, ctx)
 		})
 	}
@@ -174,8 +139,7 @@ func parseParams(ctx *Context, handlerInterface interface{}) (needParseBody bool
 	if handlerValue.Kind() == reflect.Ptr {
 		handlerValue = handlerValue.Elem()
 	}
-	needParseBody, err = parseStructFields(handlerValue, ctx)
-	return
+	return parseStructFields(handlerValue, ctx)
 }
 
 // parseStructFields 递归解析结构体字段

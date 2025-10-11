@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"io"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -92,7 +93,7 @@ func (c *Context) Next() {
 	}
 }
 
-func NewContext(r *http.Request, w *http.ResponseWriter, s *Server) *Context {
+func NewContext(r *http.Request, w *http.ResponseWriter, s *Server, runnerChain []HandlerFunc) *Context {
 	ctx := &Context{
 		Request: Request{
 			Method: r.Method,
@@ -127,7 +128,7 @@ func NewContext(r *http.Request, w *http.ResponseWriter, s *Server) *Context {
 		Server: s,
 
 		currentRunnerIndex: -1,
-		runnerChain:        nil,
+		runnerChain:        runnerChain,
 	}
 
 	// 解析路径参数
@@ -210,4 +211,16 @@ func parsePathParams(r *http.Request) (keys []string, values []string) {
 		}
 	}
 	return
+}
+
+// FillBody 读取请求体并缓存到 ctx.Body
+func (c *Context) FillBody() []byte {
+	if c.Body == nil {
+		body, err := io.ReadAll(c.OriginalRequest.Body)
+		if err != nil {
+			panic(err)
+		}
+		c.Body = body
+	}
+	return c.Body
 }

@@ -2,10 +2,19 @@ package rest
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"reflect"
 	"strings"
+)
+
+type BodyType int
+type BodyFieldMap map[BodyType]map[string]string
+
+const (
+	Nil BodyType = iota
+	EncodeUrl
+	Json
+	FormData
 )
 
 // runnersFromHandlers 将实现 HandlerInterface 的结构体类型转换为每次请求创建新实例并执行的 HandlerFunc 序列
@@ -33,6 +42,17 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, error
 				panic("Handler does not implement HandlerInterface")
 			}
 
+			// 判断请求体类型
+			bodyType := Nil
+			contentType := strings.ToLower(strings.Trim(ctx.Request.Header.Get("Content-Type"), " "))
+			if strings.HasPrefix(contentType, "application/x-www-form-urlencoded") {
+				bodyType = EncodeUrl
+			} else if strings.HasPrefix(contentType, "application/json") {
+				bodyType = Json
+			} else if strings.HasPrefix(contentType, "multipart/form-data") {
+				bodyType = FormData
+			}
+
 			// 解析 query/path/header 参数
 			needParseBody, err := parseParams(ctx, handlerInterface)
 			if err != nil {
@@ -43,24 +63,11 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, error
 
 			// 如果需要解析请求体，尝试解析 JSON 到结构体
 			if needParseBody {
-				if ctx.Body == nil {
-					body, err := io.ReadAll(ctx.OriginalRequest.Body)
-					if err != nil {
+				if bodyType == Json && ctx.ContentLength > 0 {
+					if err := json.Unmarshal(ctx.FillBody(), handlerInterface); err != nil {
 						ctx.Status(http.StatusBadRequest)
-						ctx.Result("Failed to read request body")
+						ctx.Result("Invalid JSON format: " + err.Error())
 						return
-					}
-					ctx.Body = body
-				}
-
-				contentType := strings.ToLower(strings.Trim(ctx.Request.Header.Get("Content-Type"), " "))
-				if len(ctx.Body) > 0 {
-					if strings.HasPrefix(contentType, "application/json") {
-						if err := json.Unmarshal(ctx.Body, handlerInterface); err != nil {
-							ctx.Status(http.StatusBadRequest)
-							ctx.Result("Invalid JSON format: " + err.Error())
-							return
-						}
 					}
 				}
 			}
