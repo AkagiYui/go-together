@@ -71,10 +71,9 @@ func main() {
 		println(ctx.Get("test"))
 	})
 
-	todoGroup := s.Group("/todos")
-	todoGroup.Use(&TestRequest{})
+	todoGroup := s.Group("/todos", AuthMiddleware())
 	{
-		todoGroup.GET("", &GetTodosRequest{})
+		todoGroup.GET("", &TestRequest{}, &GetTodosRequest{})
 		todoGroup.GET("/{id}", &GetTodoByIDRequest{})
 		todoGroup.POST("", &CreateTodoRequest{})
 		todoGroup.PUT("/{id}", &UpdateTodoRequest{})
