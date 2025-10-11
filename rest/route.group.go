@@ -5,9 +5,11 @@ type RouteGroup struct {
 	BasePath       string
 	ChildGroups    []*RouteGroup
 	PreRunnerChain []HandlerFunc
+
+	server *Server
 }
 
-func NewRouteGroup(basePath string, preRunnerChain ...HandlerFunc) RouteGroup {
+func NewRouteGroup(server *Server, basePath string, preRunnerChain ...HandlerFunc) RouteGroup {
 	if preRunnerChain == nil {
 		preRunnerChain = make([]HandlerFunc, 0)
 	}
@@ -16,14 +18,15 @@ func NewRouteGroup(basePath string, preRunnerChain ...HandlerFunc) RouteGroup {
 		BasePath:       basePath,
 		ChildGroups:    make([]*RouteGroup, 0),
 		PreRunnerChain: preRunnerChain,
+		server:         server,
 	}
 }
 
 // Group 创建子组
 func (g *RouteGroup) Group(basePath string, preRunnerChain ...HandlerFunc) *RouteGroup {
-	childGroup := NewRouteGroup(g.BasePath+basePath, preRunnerChain...)
+	childGroup := NewRouteGroup(g.server, g.BasePath+basePath)
 	g.ChildGroups = append(g.ChildGroups, &childGroup)
-	childGroup.PreRunnerChain = append(childGroup.PreRunnerChain, g.PreRunnerChain...)
+	childGroup.PreRunnerChain = append(g.PreRunnerChain, preRunnerChain...)
 	return &childGroup
 }
 

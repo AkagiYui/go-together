@@ -10,12 +10,16 @@ import (
 
 type Server struct {
 	RouteGroup
+	Debug bool
 }
 
 func NewServer() *Server {
-	return &Server{
-		RouteGroup: NewRouteGroup(""),
+	server := &Server{
+		RouteGroup: NewRouteGroup(nil, ""),
+		Debug:      false,
 	}
+	server.RouteGroup.server = server
+	return server
 }
 
 func (s *Server) Run(addr string) error {
