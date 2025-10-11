@@ -10,9 +10,6 @@ type RouteGroup struct {
 }
 
 func NewRouteGroup(server *Server, basePath string, preRunnerChain ...HandlerFunc) RouteGroup {
-	if preRunnerChain == nil {
-		preRunnerChain = make([]HandlerFunc, 0)
-	}
 	return RouteGroup{
 		Factories:      make([]HandlerFactory, 0),
 		BasePath:       basePath,
@@ -24,9 +21,9 @@ func NewRouteGroup(server *Server, basePath string, preRunnerChain ...HandlerFun
 
 // Group 创建子组
 func (g *RouteGroup) Group(basePath string, preRunnerChain ...HandlerFunc) *RouteGroup {
-	childGroup := NewRouteGroup(g.server, g.BasePath+basePath)
+	childGroup := NewRouteGroup(g.server, basePath)
 	g.ChildGroups = append(g.ChildGroups, &childGroup)
-	childGroup.PreRunnerChain = append(g.PreRunnerChain, preRunnerChain...)
+	// childGroup.PreRunnerChain = append(g.PreRunnerChain, preRunnerChain...) // 不再提前拼接父组的中间件
 	return &childGroup
 }
 

@@ -9,31 +9,99 @@ import (
 )
 
 type Server struct {
-	RouteGroup
-	Debug bool
+	RouteGroup       // 用于开发者组织路由
+	Debug            bool
+	flattenFactories []HandlerFactory // 最终注册的所有路由
 }
 
 func NewServer() *Server {
 	server := &Server{
-		RouteGroup: NewRouteGroup(nil, ""),
-		Debug:      false,
+		RouteGroup:       NewRouteGroup(nil, ""),
+		Debug:            false,
+		flattenFactories: nil,
 	}
 	server.RouteGroup.server = server
 	return server
 }
 
+// FlattenFactories 递归地将路由组中的路由展开为一个列表
+//
+// preBasePath 上一级路由组的路径
+// prePreRunnerChain 上一级路由组的前置 handler 链
+func FlattenFactories(group *RouteGroup, preBasePath string, prePreRunnerChain []HandlerFunc) []HandlerFactory {
+	factories := make([]HandlerFactory, 0)                                   // 这一级路由组的所有路由
+	thisBasePath := preBasePath + group.BasePath                             // 当前路由组的路径
+	thisPreRunnerChain := append(prePreRunnerChain, group.PreRunnerChain...) // 当前路由组的前置 handler 链
+	// 处理当前路由组的路由
+	for _, factory := range group.Factories {
+		factory.Path = thisBasePath + factory.Path                               // 上一级路由组的路径 + 当前路由组的路径 + 当前路由的路径
+		factory.RunnerChain = append(thisPreRunnerChain, factory.RunnerChain...) // 上一级路由组的前置 handler 链 + 当前路由组的前置 handler 链 + 当前路由的 handler 链
+		factories = append(factories, factory)
+	}
+	// 递归处理子路由组
+	for _, childGroup := range group.ChildGroups {
+		factories = append(factories, FlattenFactories(childGroup, thisBasePath, thisPreRunnerChain)...)
+	}
+	return factories
+}
+
 func (s *Server) Run(addr string) error {
 	mux := http.NewServeMux()
 	registerRouteGroup(mux, &s.RouteGroup, s) // 处理所有注册的 handler
+
+	if s.Debug {
+		// 输出所有注册的路由
+		for _, factory := range s.flattenFactories {
+			fmt.Printf("[%s] %s\n", factory.Method, factory.Path)
+		}
+	}
+
 	return http.ListenAndServe(addr, mux)
 }
 
 func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
-	for _, factory := range group.Factories {
+	// for _, factory := range group.Factories {
+	// 	// 构建路由路径
+	// 	pattern := group.BasePath + factory.Path
+	// 	if factory.Method != "" {
+	// 		pattern = factory.Method + " " + pattern
+	// 	}
+
+	// 	mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+	// 		ctx := NewContext(r, &w, server) // 创建上下文
+
+	// 		defer func() {
+	// 			if err := recover(); err != nil {
+	// 				fmt.Println(err)
+	// 				w.WriteHeader(http.StatusInternalServerError)
+	// 				w.Write([]byte("Internal Server Error"))
+	// 			}
+	// 		}()
+
+	// 		// dispatch request
+	// 		ctx.runnerChain = factory.RunnerChain
+	// 		ctx.Next()
+	// 		for key, values := range ctx.Response.Headers {
+	// 			for _, value := range values {
+	// 				w.Header().Add(key, value)
+	// 			}
+	// 		}
+
+	// 		server.writeResponse(w, ctx.result, ctx)
+	// 	})
+	// }
+
+	// for _, childGroup := range group.ChildGroups {
+	// 	registerRouteGroup(mux, childGroup, server)
+	// }
+
+	factories := FlattenFactories(group, "", make([]HandlerFunc, 0))
+	server.flattenFactories = factories
+	for _, factory := range factories {
 		// 构建路由路径
-		pattern := group.BasePath + factory.Path
+		pattern := factory.Path
 		if factory.Method != "" {
-			pattern = factory.Method + " " + pattern
+			pattern = fmt.Sprintf("%s %s", factory.Method, factory.Path)
 		}
 
 		mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
@@ -58,10 +126,6 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 
 			server.writeResponse(w, ctx.result, ctx)
 		})
-	}
-
-	for _, childGroup := range group.ChildGroups {
-		registerRouteGroup(mux, childGroup, server)
 	}
 }
 
