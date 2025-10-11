@@ -12,6 +12,7 @@ type CreateTodoRequest struct {
 }
 
 func (r *CreateTodoRequest) Handle(ctx *rest.Context) {
+	println("CreateTodoRequest")
 	// 验证必填字段
 	if r.Title == "" {
 		ctx.Result(model.Error(model.INPUT_ERROR, "Title is required"))

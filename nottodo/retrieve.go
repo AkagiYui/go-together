@@ -10,6 +10,7 @@ import (
 type GetTodosRequest struct{}
 
 func (r *GetTodosRequest) Handle(ctx *rest.Context) {
+	println("GetTodosRequest")
 	ctx.Result(model.Success(model.PageData{
 		Total: len(todos),
 		List:  todos,
@@ -21,6 +22,7 @@ type GetTodoByIDRequest struct {
 }
 
 func (r *GetTodoByIDRequest) Handle(ctx *rest.Context) {
+	println("GetTodoByIDRequest")
 	for _, todo := range todos {
 		if todo.ID == r.ID {
 			ctx.Result(model.Success(todo))

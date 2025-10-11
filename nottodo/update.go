@@ -13,6 +13,7 @@ type UpdateTodoRequest struct {
 }
 
 func (r *UpdateTodoRequest) Handle(ctx *rest.Context) {
+	println("UpdateTodoRequest")
 	for i, todo := range todos {
 		if todo.ID == r.ID {
 			oriTodo := todos[i]

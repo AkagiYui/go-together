@@ -12,6 +12,7 @@ type DeleteTodoRequest struct {
 }
 
 func (r *DeleteTodoRequest) Handle(ctx *rest.Context) {
+	println("DeleteTodoRequest")
 	for i, todo := range todos {
 		if todo.ID == r.ID {
 			todos = append(todos[:i], todos[i+1:]...)
