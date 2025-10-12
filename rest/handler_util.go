@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"reflect"
-	"strings"
 )
 
 type BodyType int
@@ -33,6 +32,7 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, error
 			return nil, ErrHandlerNotImplementHandlerInterface{}
 		}
 
+		// handler 仅处理该 handler 需要的数据，所有 handler 共用的数据请在 Context 中处理
 		runner := func(ctx *Context) {
 			// 创建新的 HandlerInterface 实例
 			handlerValue := reflect.New(t)
@@ -40,17 +40,6 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, error
 			handler, ok := handlerInterface.(HandlerInterface)
 			if !ok {
 				panic("Handler does not implement HandlerInterface")
-			}
-
-			// 判断请求体类型
-			bodyType := Nil
-			contentType := strings.ToLower(strings.Trim(ctx.Request.Header.Get("Content-Type"), " "))
-			if strings.HasPrefix(contentType, "application/x-www-form-urlencoded") {
-				bodyType = EncodeUrl
-			} else if strings.HasPrefix(contentType, "application/json") {
-				bodyType = Json
-			} else if strings.HasPrefix(contentType, "multipart/form-data") {
-				bodyType = FormData
 			}
 
 			// 解析 query/path/header 参数
@@ -63,7 +52,7 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, error
 
 			// 如果需要解析请求体，尝试解析 JSON 到结构体
 			if needParseBody {
-				if bodyType == Json && ctx.ContentLength > 0 {
+				if ctx.BodyType == Json && ctx.ContentLength > 0 {
 					if err := json.Unmarshal(ctx.FillBody(), handlerInterface); err != nil {
 						ctx.Status(http.StatusBadRequest)
 						ctx.Result("Invalid JSON format: " + err.Error())

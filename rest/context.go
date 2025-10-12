@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strings"
 	"sync"
 )
 
@@ -18,12 +19,15 @@ type Request struct {
 	RemoteAddr    string
 	ContentLength int64
 
+	// params in header
 	Header     http.Header
 	PathParams map[string]string
 	Query      url.Values
 
-	Form url.Values
-	Body []byte
+	// body
+	BodyType BodyType
+	Form     url.Values
+	Body     []byte
 }
 
 type Response struct {
@@ -110,8 +114,9 @@ func NewContext(r *http.Request, w *http.ResponseWriter, s *Server, runnerChain 
 			PathParams: make(map[string]string),
 			Query:      r.URL.Query(),
 
-			Form: nil, // Form 暂不处理
-			Body: nil,
+			BodyType: Nil,
+			Form:     nil, // Form 暂不处理
+			Body:     nil,
 		},
 		Response: Response{
 			statusCode: http.StatusOK,
@@ -129,6 +134,16 @@ func NewContext(r *http.Request, w *http.ResponseWriter, s *Server, runnerChain 
 
 		currentRunnerIndex: -1,
 		runnerChain:        runnerChain,
+	}
+
+	// 解析请求体类型
+	contentType := strings.ToLower(strings.Trim(ctx.Request.Header.Get("Content-Type"), " "))
+	if strings.HasPrefix(contentType, "application/x-www-form-urlencoded") {
+		ctx.BodyType = EncodeUrl
+	} else if strings.HasPrefix(contentType, "application/json") {
+		ctx.BodyType = Json
+	} else if strings.HasPrefix(contentType, "multipart/form-data") {
+		ctx.BodyType = FormData
 	}
 
 	// 解析路径参数
