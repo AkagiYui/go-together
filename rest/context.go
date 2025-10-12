@@ -247,3 +247,20 @@ func (c *Context) FillBody() []byte {
 	}
 	return c.Body
 }
+
+func (c *Context) Stream(step func(w io.Writer) bool) bool {
+	w := *c.OriginalWriter
+	clientGone := c.OriginalRequest.Context().Done()
+	for {
+		select {
+		case <-clientGone:
+			return true
+		default:
+			keepOpen := step(w)
+			w.(http.Flusher).Flush()
+			if !keepOpen {
+				return false
+			}
+		}
+	}
+}
