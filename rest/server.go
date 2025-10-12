@@ -3,6 +3,8 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/textproto"
 	"reflect"
@@ -237,10 +239,14 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseBody b
 					}
 				}
 
-				// TODO 处理文件
-				// fileFieldsMap := form.File
+				// 处理文件
+				fileFieldsMap := form.File
+				if fileFields, ok := fileFieldsMap[formTag]; ok && len(fileFields) > 0 {
+					if err = serFileFieldValue(fieldValue, fileFields...); err != nil {
+						return
+					}
+				}
 			}
-
 			continue
 		}
 
@@ -263,6 +269,44 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseBody b
 	}
 
 	return
+}
+
+func serFileFieldValue(fieldValue reflect.Value, fileHeader ...*multipart.FileHeader) error {
+	// 判断字段类型
+	// 如果是 *multipart.FileHeader，直接设置
+	if fieldValue.Type() == reflect.TypeOf(&multipart.FileHeader{}) {
+		fieldValue.Set(reflect.ValueOf(fileHeader[0]))
+		return nil
+	}
+	// 如果是 []byte ，读取文件内容并设置
+	if fieldValue.Type() == reflect.TypeOf([]byte{}) {
+		file, err := fileHeader[0].Open()
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		content, err := io.ReadAll(file)
+		if err != nil {
+			return err
+		}
+		fieldValue.Set(reflect.ValueOf(content))
+		return nil
+	}
+	// 如果是 string ，使用 utf-8 解码 []byte 并设置
+	if fieldValue.Kind() == reflect.String {
+		file, err := fileHeader[0].Open()
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		content, err := io.ReadAll(file)
+		if err != nil {
+			return err
+		}
+		fieldValue.SetString(string(content))
+		return nil
+	}
+	return nil
 }
 
 // setFieldValue 根据字段类型设置值
