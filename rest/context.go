@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"slices"
 	"sync"
 )
 
@@ -52,6 +53,8 @@ type Context struct {
 
 	currentRunnerIndex int           // 私有索引：当前执行位置
 	runnerChain        []HandlerFunc // 当前请求的执行链
+
+	responseAsStream bool
 }
 
 func (c *Response) Status(code int) {
@@ -136,12 +139,20 @@ func NewContext(r *http.Request, w *http.ResponseWriter, s *Server, runnerChain 
 
 		currentRunnerIndex: -1,
 		runnerChain:        runnerChain,
+
+		responseAsStream: false,
 	}
 
 	// 解析请求体类型
 	contentType, _, err := mime.ParseMediaType(ctx.Request.Header.Get("Content-Type"))
 	if err != nil {
-		fmt.Printf("Build context failed: %s\n", err)
+		if !slices.Contains([]string{http.MethodGet}, ctx.Method) {
+			fmt.Printf("Method: %s, Content-Type: %s\n", ctx.Method, contentType)
+			ctx.Status(http.StatusBadRequest)
+			ctx.Result("Invalid Content-Type")
+			ctx.Abort()
+			return ctx
+		}
 	}
 	switch contentType {
 	case "application/x-www-form-urlencoded":
@@ -249,6 +260,10 @@ func (c *Context) FillBody() []byte {
 }
 
 func (c *Context) Stream(step func(w io.Writer) bool) bool {
+	c.responseAsStream = true
+	c.Response.Headers.Add("Transfer-Encoding", "chunked")
+	c.writeHeaders()
+
 	w := *c.OriginalWriter
 	clientGone := c.OriginalRequest.Context().Done()
 	for {
@@ -261,6 +276,14 @@ func (c *Context) Stream(step func(w io.Writer) bool) bool {
 			if !keepOpen {
 				return false
 			}
+		}
+	}
+}
+
+func (c *Context) writeHeaders() {
+	for key, values := range c.Response.Headers {
+		for _, value := range values {
+			(*c.OriginalWriter).Header().Add(key, value)
 		}
 	}
 }

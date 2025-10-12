@@ -93,12 +93,10 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 			ctx.Next()
 
 			// response
-			for key, values := range ctx.Response.Headers {
-				for _, value := range values {
-					w.Header().Add(key, value)
-				}
+			if !ctx.responseAsStream {
+				ctx.writeHeaders()
+				server.writeResponse(w, ctx.result, ctx)
 			}
-			server.writeResponse(w, ctx.result, ctx)
 		})
 	}
 }
