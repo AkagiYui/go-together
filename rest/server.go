@@ -279,27 +279,23 @@ func serFileFieldValue(fieldValue reflect.Value, fileHeader ...*multipart.FileHe
 		return nil
 	}
 
-	switch fieldValue.Kind() {
-	case reflect.Slice:
-		// 创建新的切片
-		// FIXIT []byte不应该这样处理
-		newSlice := reflect.MakeSlice(fieldValue.Type(), len(fileHeader), len(fileHeader))
-
-		// 为每个元素设置值
-		for i, fh := range fileHeader {
-			elemValue := newSlice.Index(i)
-			if err := setFileScalarValue(elemValue, fh); err != nil {
-				return err
-			}
-		}
-
-		// 设置切片
-		fieldValue.Set(newSlice)
-
-	default:
-		// 对于非切片类型，只使用第一个文件
+	// 如果不是切片，或者是指向 []byte 的切片，只使用第一个文件
+	if fieldValue.Kind() != reflect.Slice || fieldValue.Type() == reflect.TypeOf([]byte{}) {
 		return setFileScalarValue(fieldValue, fileHeader[0])
 	}
+
+	// 创建新的切片
+	newSlice := reflect.MakeSlice(fieldValue.Type(), len(fileHeader), len(fileHeader))
+	// 为每个元素设置值
+	for i, fh := range fileHeader {
+		elemValue := newSlice.Index(i)
+		if err := setFileScalarValue(elemValue, fh); err != nil {
+			return err
+		}
+	}
+	// 设置切片
+	fieldValue.Set(newSlice)
+
 	return nil
 }
 
@@ -347,26 +343,23 @@ func setFieldValue(fieldValue reflect.Value, values ...string) error {
 		return nil
 	}
 
-	switch fieldValue.Kind() {
-	case reflect.Slice:
-		// 创建新的切片
-		newSlice := reflect.MakeSlice(fieldValue.Type(), len(values), len(values))
-
-		// 为每个元素设置值
-		for i, value := range values {
-			elemValue := newSlice.Index(i)
-			if err := setScalarValue(elemValue, value); err != nil {
-				return err
-			}
-		}
-
-		// 设置切片
-		fieldValue.Set(newSlice)
-
-	default:
-		// 对于非切片类型，只使用第一个值
+	// 对于非切片类型，只使用第一个值
+	if fieldValue.Kind() != reflect.Slice {
 		return setScalarValue(fieldValue, values[0])
 	}
+
+	// 创建新的切片
+	newSlice := reflect.MakeSlice(fieldValue.Type(), len(values), len(values))
+	// 为每个元素设置值
+	for i, value := range values {
+		elemValue := newSlice.Index(i)
+		if err := setScalarValue(elemValue, value); err != nil {
+			return err
+		}
+	}
+	// 设置切片
+	fieldValue.Set(newSlice)
+
 	return nil
 }
 
