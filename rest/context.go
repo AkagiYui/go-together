@@ -1,11 +1,13 @@
 package rest
 
 import (
+	"bytes"
+	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
 	"reflect"
-	"strings"
 	"sync"
 )
 
@@ -137,12 +139,16 @@ func NewContext(r *http.Request, w *http.ResponseWriter, s *Server, runnerChain 
 	}
 
 	// 解析请求体类型
-	contentType := strings.ToLower(strings.Trim(ctx.Request.Header.Get("Content-Type"), " "))
-	if strings.HasPrefix(contentType, "application/x-www-form-urlencoded") {
+	contentType, _, err := mime.ParseMediaType(ctx.Request.Header.Get("Content-Type"))
+	if err != nil {
+		fmt.Printf("Build context failed: %s\n", err)
+	}
+	switch contentType {
+	case "application/x-www-form-urlencoded":
 		ctx.BodyType = EncodeUrl
-	} else if strings.HasPrefix(contentType, "application/json") {
+	case "application/json":
 		ctx.BodyType = Json
-	} else if strings.HasPrefix(contentType, "multipart/form-data") {
+	case "multipart/form-data":
 		ctx.BodyType = FormData
 	}
 
@@ -236,6 +242,8 @@ func (c *Context) FillBody() []byte {
 			panic(err)
 		}
 		c.Body = body
+		// 重置原请求体
+		c.OriginalRequest.Body = io.NopCloser(io.MultiReader(c.OriginalRequest.Body, io.NopCloser(bytes.NewReader(c.Body))))
 	}
 	return c.Body
 }

@@ -43,7 +43,7 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, error
 			}
 
 			// 解析 query/path/header 参数
-			needParseBody, err := parseParams(ctx, handlerInterface)
+			needParseJsonBody, err := parseParams(ctx, handlerInterface)
 			if err != nil {
 				ctx.Status(http.StatusBadRequest)
 				ctx.Result("Failed to parse parameters: " + err.Error())
@@ -51,13 +51,11 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, error
 			}
 
 			// 如果需要解析请求体，尝试解析 JSON 到结构体
-			if needParseBody {
-				if ctx.BodyType == Json && ctx.ContentLength > 0 {
-					if err := json.Unmarshal(ctx.FillBody(), handlerInterface); err != nil {
-						ctx.Status(http.StatusBadRequest)
-						ctx.Result("Invalid JSON format: " + err.Error())
-						return
-					}
+			if needParseJsonBody && ctx.BodyType == Json && ctx.ContentLength > 0 {
+				if err := json.Unmarshal(ctx.FillBody(), handlerInterface); err != nil {
+					ctx.Status(http.StatusBadRequest)
+					ctx.Result("Invalid JSON format: " + err.Error())
+					return
 				}
 			}
 

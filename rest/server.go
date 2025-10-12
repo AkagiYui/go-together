@@ -137,7 +137,7 @@ func (s *Server) writeResponse(w http.ResponseWriter, result any, ctx *Context) 
 }
 
 // parseParams 解析query参数和path参数和header参数到结构体字段
-func parseParams(ctx *Context, handlerInterface interface{}) (needParseBody bool, err error) {
+func parseParams(ctx *Context, handlerInterface interface{}) (needParseJsonBody bool, err error) {
 	handlerValue := reflect.ValueOf(handlerInterface)
 	if handlerValue.Kind() == reflect.Ptr {
 		handlerValue = handlerValue.Elem()
@@ -146,7 +146,7 @@ func parseParams(ctx *Context, handlerInterface interface{}) (needParseBody bool
 }
 
 // parseStructFields 递归解析结构体字段
-func parseStructFields(structValue reflect.Value, ctx *Context) (needParseBody bool, err error) {
+func parseStructFields(structValue reflect.Value, ctx *Context) (needParseJsonBody bool, err error) {
 	pathParams := ctx.PathParams
 	queryValues := ctx.Query
 	headers := ctx.Request.Header
@@ -205,7 +205,7 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseBody b
 
 		// 处理 json tag
 		if jsonTag := field.Tag.Get("json"); jsonTag != "" && ctx.BodyType == Json {
-			needParseBody = true // 交给 json.Unmarshal 处理
+			needParseJsonBody = true // 交给 json.Unmarshal 处理
 			continue
 		}
 
@@ -214,6 +214,7 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseBody b
 			switch ctx.BodyType {
 			case EncodeUrl:
 				// 解析表单
+				ctx.FillBody()
 				ctx.OriginalRequest.ParseForm()
 				form := ctx.OriginalRequest.PostForm
 				if form == nil {
@@ -225,6 +226,7 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseBody b
 					}
 				}
 			case FormData:
+				ctx.FillBody()
 				ctx.OriginalRequest.ParseMultipartForm(32 << 20) // 32MB
 				form := ctx.OriginalRequest.MultipartForm
 				if form == nil {
@@ -260,27 +262,57 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseBody b
 		}
 
 		if fieldType.Kind() == reflect.Struct {
-			childNeedParseBody, childErr := parseStructFields(fieldValue, ctx)
+			childNeedParseJsonBody, childErr := parseStructFields(fieldValue, ctx)
 			if childErr != nil {
-				return needParseBody, childErr
+				return needParseJsonBody, childErr
 			}
-			needParseBody = needParseBody || childNeedParseBody
+			needParseJsonBody = needParseJsonBody || childNeedParseJsonBody
 		}
 	}
 
 	return
 }
 
+// serFileFieldValue 根据字段类型设置文件值
 func serFileFieldValue(fieldValue reflect.Value, fileHeader ...*multipart.FileHeader) error {
-	// 判断字段类型
+	if len(fileHeader) == 0 {
+		return nil
+	}
+
+	switch fieldValue.Kind() {
+	case reflect.Slice:
+		// 创建新的切片
+		// FIXIT []byte不应该这样处理
+		newSlice := reflect.MakeSlice(fieldValue.Type(), len(fileHeader), len(fileHeader))
+
+		// 为每个元素设置值
+		for i, fh := range fileHeader {
+			elemValue := newSlice.Index(i)
+			if err := setFileScalarValue(elemValue, fh); err != nil {
+				return err
+			}
+		}
+
+		// 设置切片
+		fieldValue.Set(newSlice)
+
+	default:
+		// 对于非切片类型，只使用第一个文件
+		return setFileScalarValue(fieldValue, fileHeader[0])
+	}
+	return nil
+}
+
+// setFileScalarValue 设置单个文件标量值
+func setFileScalarValue(fieldValue reflect.Value, fileHeader *multipart.FileHeader) error {
 	// 如果是 *multipart.FileHeader，直接设置
 	if fieldValue.Type() == reflect.TypeOf(&multipart.FileHeader{}) {
-		fieldValue.Set(reflect.ValueOf(fileHeader[0]))
+		fieldValue.Set(reflect.ValueOf(fileHeader))
 		return nil
 	}
 	// 如果是 []byte ，读取文件内容并设置
 	if fieldValue.Type() == reflect.TypeOf([]byte{}) {
-		file, err := fileHeader[0].Open()
+		file, err := fileHeader.Open()
 		if err != nil {
 			return err
 		}
@@ -294,7 +326,7 @@ func serFileFieldValue(fieldValue reflect.Value, fileHeader ...*multipart.FileHe
 	}
 	// 如果是 string ，使用 utf-8 解码 []byte 并设置
 	if fieldValue.Kind() == reflect.String {
-		file, err := fileHeader[0].Open()
+		file, err := fileHeader.Open()
 		if err != nil {
 			return err
 		}
