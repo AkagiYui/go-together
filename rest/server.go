@@ -209,7 +209,8 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseBody b
 
 		// 处理 form tag
 		if formTag := field.Tag.Get("form"); formTag != "" {
-			if ctx.BodyType == EncodeUrl {
+			switch ctx.BodyType {
+			case EncodeUrl:
 				// 解析表单
 				ctx.OriginalRequest.ParseForm()
 				form := ctx.OriginalRequest.PostForm
@@ -221,6 +222,23 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseBody b
 						return
 					}
 				}
+			case FormData:
+				ctx.OriginalRequest.ParseMultipartForm(32 << 20) // 32MB
+				form := ctx.OriginalRequest.MultipartForm
+				if form == nil {
+					return false, nil
+				}
+
+				// 处理普通表单字段
+				notFileFieldsMap := form.Value
+				if notFileValues, ok := notFileFieldsMap[formTag]; ok && len(notFileValues) > 0 {
+					if err = setFieldValue(fieldValue, notFileValues...); err != nil {
+						return
+					}
+				}
+
+				// TODO 处理文件
+				// fileFieldsMap := form.File
 			}
 
 			continue
