@@ -166,9 +166,6 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseBody b
 		field := structType.Field(i)
 		fieldValue := structValue.Field(i)
 
-		// 检查是否需要解析请求体
-		needParseBody = needParseBody || field.Tag.Get("json") != "" || field.Tag.Get("form") != "" || field.Tag.Get("body") != ""
-
 		// 检查字段是否可设置
 		if !fieldValue.CanSet() {
 			continue
@@ -201,6 +198,31 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseBody b
 					return
 				}
 			}
+			continue
+		}
+
+		// 处理 json tag
+		if jsonTag := field.Tag.Get("json"); jsonTag != "" && ctx.BodyType == Json {
+			needParseBody = true // 交给 json.Unmarshal 处理
+			continue
+		}
+
+		// 处理 form tag
+		if formTag := field.Tag.Get("form"); formTag != "" {
+			if ctx.BodyType == EncodeUrl {
+				// 解析表单
+				ctx.OriginalRequest.ParseForm()
+				form := ctx.OriginalRequest.PostForm
+				if form == nil {
+					return false, nil
+				}
+				if formValue, ok := form[formTag]; ok {
+					if err = setFieldValue(fieldValue, formValue...); err != nil {
+						return
+					}
+				}
+			}
+
 			continue
 		}
 
