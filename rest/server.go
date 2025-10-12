@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/textproto"
 	"reflect"
 	"strconv"
 )
@@ -175,11 +176,12 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseBody b
 
 		// 处理 query tag
 		if queryTag := field.Tag.Get("query"); queryTag != "" {
-			if queryParam := queryValues.Get(queryTag); queryParam != "" {
-				if err = setFieldValue(fieldValue, queryParam); err != nil {
+			if queryParam, ok := queryValues[queryTag]; ok {
+				if err = setFieldValue(fieldValue, queryParam...); err != nil {
 					return
 				}
 			}
+			continue
 		}
 
 		// 处理 path tag
@@ -189,15 +191,17 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseBody b
 					return
 				}
 			}
+			continue
 		}
 
 		// 处理 header tag
 		if headerTag := field.Tag.Get("header"); headerTag != "" {
-			if headerValue := headers.Get(headerTag); headerValue != "" {
-				if err = setFieldValue(fieldValue, headerValue); err != nil {
+			if headerValue, ok := headers[textproto.CanonicalMIMEHeaderKey(headerTag)]; ok {
+				if err = setFieldValue(fieldValue, headerValue...); err != nil {
 					return
 				}
 			}
+			continue
 		}
 
 		// 递归处理嵌套结构体
@@ -222,36 +226,64 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseBody b
 }
 
 // setFieldValue 根据字段类型设置值
-func setFieldValue(fieldValue reflect.Value, value string) error {
+func setFieldValue(fieldValue reflect.Value, values ...string) error {
+	if len(values) == 0 {
+		return nil
+	}
+
 	switch fieldValue.Kind() {
-	case reflect.String:
+	case reflect.Slice:
+		// 创建新的切片
+		newSlice := reflect.MakeSlice(fieldValue.Type(), len(values), len(values))
+
+		// 为每个元素设置值
+		for i, value := range values {
+			elemValue := newSlice.Index(i)
+			if err := setScalarValue(elemValue, value); err != nil {
+				return err
+			}
+		}
+
+		// 设置切片
+		fieldValue.Set(newSlice)
+
+	default:
+		// 对于非切片类型，只使用第一个值
+		return setScalarValue(fieldValue, values[0])
+	}
+	return nil
+}
+
+// setScalarValue 设置标量值
+func setScalarValue(fieldValue reflect.Value, value string) error {
+	switch fieldValue.Kind() {
+	case reflect.String: // 字符串
 		fieldValue.SetString(value)
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64: // 整数
 		intVal, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
 			return err
 		}
 		fieldValue.SetInt(intVal)
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64: // 无符号整数
 		uintVal, err := strconv.ParseUint(value, 10, 64)
 		if err != nil {
 			return err
 		}
 		fieldValue.SetUint(uintVal)
-	case reflect.Float32, reflect.Float64:
+	case reflect.Float32, reflect.Float64: // 浮点数
 		floatVal, err := strconv.ParseFloat(value, 64)
 		if err != nil {
 			return err
 		}
 		fieldValue.SetFloat(floatVal)
-	case reflect.Bool:
+	case reflect.Bool: // 布尔值
 		boolVal, err := strconv.ParseBool(value)
 		if err != nil {
 			return err
 		}
 		fieldValue.SetBool(boolVal)
 	default:
-		// 对于不支持的类型，暂时跳过
 		fmt.Printf("Unsupported field type: %s for value: %s\n", fieldValue.Kind(), value)
 		return nil
 	}
