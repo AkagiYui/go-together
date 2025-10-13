@@ -1,5 +1,5 @@
-nottodo-gin/
 example*
 *_test.go
 .vscode/
 __debug*
+*.png

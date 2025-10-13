@@ -2,17 +2,15 @@ package rest
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
-	"mime/multipart"
 	"net/http"
 	"net/textproto"
 	"reflect"
-	"strconv"
+	"slices"
+
+	"github.com/akagiyui/go-together/common/cache"
 )
 
 type BodyType int
-type BodyFieldMap map[BodyType]map[string]string
 
 const (
 	Nil BodyType = iota
@@ -20,6 +18,61 @@ const (
 	Json
 	FormData
 )
+
+var structInfoCache = cache.NewCacheMap[reflect.Type, *structInfo]()
+
+type structInfo struct {
+	fields []fieldInfo
+}
+
+type fieldInfo struct {
+	index     int
+	name      string
+	tagType   string // "query", "path", "header", "json", "form"
+	tagValue  string
+	fieldType reflect.Type
+	isPtr     bool
+}
+
+// 获取或创建结构体信息缓存
+func getStructInfo(t reflect.Type) *structInfo {
+	return structInfoCache.GetOrSet(t, func() *structInfo {
+		info := &structInfo{
+			fields: make([]fieldInfo, 0),
+		}
+
+		// 预处理所有字段信息
+		for i := 0; i < t.NumField(); i++ {
+			field := t.Field(i)
+
+			var tagType, tagValue string
+			if tag := field.Tag.Get("query"); tag != "" {
+				tagType, tagValue = "query", tag
+			} else if tag := field.Tag.Get("path"); tag != "" {
+				tagType, tagValue = "path", tag
+			} else if tag := field.Tag.Get("header"); tag != "" {
+				tagType, tagValue = "header", tag
+			} else if tag := field.Tag.Get("json"); tag != "" {
+				tagType, tagValue = "json", tag
+			} else if tag := field.Tag.Get("form"); tag != "" {
+				tagType, tagValue = "form", tag
+			}
+
+			if tagType != "" {
+				info.fields = append(info.fields, fieldInfo{
+					index:     i,
+					name:      field.Name,
+					tagType:   tagType,
+					tagValue:  tagValue,
+					fieldType: field.Type,
+					isPtr:     field.Type.Kind() == reflect.Ptr,
+				})
+			}
+		}
+
+		return info
+	})
+}
 
 // runnersFromHandlers 将实现 HandlerInterface 的结构体类型转换为每次请求创建新实例并执行的 HandlerFunc 序列
 func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, error) {
@@ -82,12 +135,8 @@ func parseParams(ctx *Context, handlerInterface interface{}) (needParseJsonBody 
 	return parseStructFields(handlerValue, ctx)
 }
 
-// parseStructFields 递归解析结构体字段
+// 优化后的 parseStructFields
 func parseStructFields(structValue reflect.Value, ctx *Context) (needParseJsonBody bool, err error) {
-	pathParams := ctx.PathParams
-	queryValues := ctx.Query
-	headers := ctx.Request.Header
-
 	if structValue.Kind() == reflect.Ptr {
 		if structValue.IsNil() {
 			return false, nil
@@ -100,54 +149,45 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseJsonBo
 	}
 
 	structType := structValue.Type()
+	info := getStructInfo(structType)
 
-	for i := 0; i < structType.NumField(); i++ {
-		field := structType.Field(i)
-		fieldValue := structValue.Field(i)
+	pathParams := ctx.PathParams
+	queryValues := ctx.Query
+	headers := ctx.Request.Header
 
-		// 检查字段是否可设置
+	// 使用缓存的字段信息，避免重复反射
+	for _, fieldInfo := range info.fields {
+		fieldValue := structValue.Field(fieldInfo.index)
+
 		if !fieldValue.CanSet() {
 			continue
 		}
 
-		// 处理 query tag
-		if queryTag := field.Tag.Get("query"); queryTag != "" {
-			if queryParam, ok := queryValues[queryTag]; ok {
+		switch fieldInfo.tagType {
+		case "query":
+			if queryParam, ok := queryValues[fieldInfo.tagValue]; ok && len(queryParam) > 0 {
 				if err = setFieldValue(fieldValue, queryParam...); err != nil {
 					return
 				}
 			}
-			continue
-		}
-
-		// 处理 path tag
-		if pathTag := field.Tag.Get("path"); pathTag != "" {
-			if pathParam, ok := pathParams[pathTag]; ok && pathParam != "" {
+		case "path":
+			if pathParam, ok := pathParams[fieldInfo.tagValue]; ok && pathParam != "" {
 				if err = setFieldValue(fieldValue, pathParam); err != nil {
 					return
 				}
 			}
-			continue
-		}
-
-		// 处理 header tag
-		if headerTag := field.Tag.Get("header"); headerTag != "" {
-			if headerValue, ok := headers[textproto.CanonicalMIMEHeaderKey(headerTag)]; ok {
+		case "header":
+			if headerValue, ok := headers[textproto.CanonicalMIMEHeaderKey(fieldInfo.tagValue)]; ok && len(headerValue) > 0 {
 				if err = setFieldValue(fieldValue, headerValue...); err != nil {
 					return
 				}
 			}
-			continue
-		}
-
-		// 处理 json tag
-		if jsonTag := field.Tag.Get("json"); jsonTag != "" && ctx.BodyType == Json {
-			needParseJsonBody = true // 交给 json.Unmarshal 处理
-			continue
-		}
-
-		// 处理 form tag
-		if formTag := field.Tag.Get("form"); formTag != "" {
+		case "json":
+			if ctx.BodyType == Json {
+				// 交给 json.Unmarshal 处理
+				needParseJsonBody = true
+			}
+		case "form":
 			switch ctx.BodyType {
 			case EncodeUrl:
 				// 解析表单
@@ -157,7 +197,7 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseJsonBo
 				if form == nil {
 					return false, nil
 				}
-				if formValue, ok := form[formTag]; ok {
+				if formValue, ok := form[fieldInfo.tagValue]; ok && len(formValue) > 0 {
 					if err = setFieldValue(fieldValue, formValue...); err != nil {
 						return
 					}
@@ -172,7 +212,7 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseJsonBo
 
 				// 处理普通表单字段
 				notFileFieldsMap := form.Value
-				if notFileValues, ok := notFileFieldsMap[formTag]; ok && len(notFileValues) > 0 {
+				if notFileValues, ok := notFileFieldsMap[fieldInfo.tagValue]; ok && len(notFileValues) > 0 {
 					if err = setFieldValue(fieldValue, notFileValues...); err != nil {
 						return
 					}
@@ -180,158 +220,44 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseJsonBo
 
 				// 处理文件
 				fileFieldsMap := form.File
-				if fileFields, ok := fileFieldsMap[formTag]; ok && len(fileFields) > 0 {
-					if err = serFileFieldValue(fieldValue, fileFields...); err != nil {
+				if fileFields, ok := fileFieldsMap[fieldInfo.tagValue]; ok && len(fileFields) > 0 {
+					if err = setFileFieldValue(fieldValue, fileFields...); err != nil {
 						return
 					}
 				}
 			}
 			continue
 		}
+	}
 
-		// 递归处理嵌套结构体
+	// 处理嵌套结构体
+	for i := 0; i < structType.NumField(); i++ {
+		field := structType.Field(i)
+		fieldValue := structValue.Field(i)
 		fieldType := field.Type
+
 		if fieldType.Kind() == reflect.Ptr {
 			if fieldValue.IsNil() {
-				fieldValue.Set(reflect.New(fieldType.Elem())) // 为nil的指针字段创建新实例
+				fieldValue.Set(reflect.New(fieldType.Elem()))
 			}
 			fieldType = fieldType.Elem()
 		}
 
 		if fieldType.Kind() == reflect.Struct {
-			childNeedParseJsonBody, childErr := parseStructFields(fieldValue, ctx)
-			if childErr != nil {
-				return needParseJsonBody, childErr
+			// 检查是否有任何 tag，如果没有才递归
+			hasTag := slices.ContainsFunc([]string{"query", "path", "header", "json", "form"}, func(tag string) bool {
+				return field.Tag.Get(tag) != ""
+			})
+
+			if !hasTag {
+				childNeedParseJsonBody, childErr := parseStructFields(fieldValue, ctx)
+				if childErr != nil {
+					return needParseJsonBody, childErr
+				}
+				needParseJsonBody = needParseJsonBody || childNeedParseJsonBody
 			}
-			needParseJsonBody = needParseJsonBody || childNeedParseJsonBody
 		}
 	}
 
 	return
-}
-
-// serFileFieldValue 根据字段类型设置文件值
-func serFileFieldValue(fieldValue reflect.Value, fileHeader ...*multipart.FileHeader) error {
-	if len(fileHeader) == 0 {
-		return nil
-	}
-
-	// 如果不是切片，或者是指向 []byte 的切片，只使用第一个文件
-	if fieldValue.Kind() != reflect.Slice || fieldValue.Type() == reflect.TypeOf([]byte{}) {
-		return setFileScalarValue(fieldValue, fileHeader[0])
-	}
-
-	// 创建新的切片
-	newSlice := reflect.MakeSlice(fieldValue.Type(), len(fileHeader), len(fileHeader))
-	// 为每个元素设置值
-	for i, fh := range fileHeader {
-		elemValue := newSlice.Index(i)
-		if err := setFileScalarValue(elemValue, fh); err != nil {
-			return err
-		}
-	}
-	// 设置切片
-	fieldValue.Set(newSlice)
-
-	return nil
-}
-
-// setFileScalarValue 设置单个文件标量值
-func setFileScalarValue(fieldValue reflect.Value, fileHeader *multipart.FileHeader) error {
-	// 如果是 *multipart.FileHeader，直接设置
-	if fieldValue.Type() == reflect.TypeOf(&multipart.FileHeader{}) {
-		fieldValue.Set(reflect.ValueOf(fileHeader))
-		return nil
-	}
-	// 如果是 []byte ，读取文件内容并设置
-	if fieldValue.Type() == reflect.TypeOf([]byte{}) {
-		file, err := fileHeader.Open()
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-		content, err := io.ReadAll(file)
-		if err != nil {
-			return err
-		}
-		fieldValue.Set(reflect.ValueOf(content))
-		return nil
-	}
-	// 如果是 string ，使用 utf-8 解码 []byte 并设置
-	if fieldValue.Kind() == reflect.String {
-		file, err := fileHeader.Open()
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-		content, err := io.ReadAll(file)
-		if err != nil {
-			return err
-		}
-		fieldValue.SetString(string(content))
-		return nil
-	}
-	return nil
-}
-
-// setFieldValue 根据字段类型设置值
-func setFieldValue(fieldValue reflect.Value, values ...string) error {
-	if len(values) == 0 {
-		return nil
-	}
-
-	// 对于非切片类型，只使用第一个值
-	if fieldValue.Kind() != reflect.Slice {
-		return setScalarValue(fieldValue, values[0])
-	}
-
-	// 创建新的切片
-	newSlice := reflect.MakeSlice(fieldValue.Type(), len(values), len(values))
-	// 为每个元素设置值
-	for i, value := range values {
-		elemValue := newSlice.Index(i)
-		if err := setScalarValue(elemValue, value); err != nil {
-			return err
-		}
-	}
-	// 设置切片
-	fieldValue.Set(newSlice)
-
-	return nil
-}
-
-// setScalarValue 设置标量值
-func setScalarValue(fieldValue reflect.Value, value string) error {
-	switch fieldValue.Kind() {
-	case reflect.String: // 字符串
-		fieldValue.SetString(value)
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64: // 整数
-		intVal, err := strconv.ParseInt(value, 10, 64)
-		if err != nil {
-			return err
-		}
-		fieldValue.SetInt(intVal)
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64: // 无符号整数
-		uintVal, err := strconv.ParseUint(value, 10, 64)
-		if err != nil {
-			return err
-		}
-		fieldValue.SetUint(uintVal)
-	case reflect.Float32, reflect.Float64: // 浮点数
-		floatVal, err := strconv.ParseFloat(value, 64)
-		if err != nil {
-			return err
-		}
-		fieldValue.SetFloat(floatVal)
-	case reflect.Bool: // 布尔值
-		boolVal, err := strconv.ParseBool(value)
-		if err != nil {
-			return err
-		}
-		fieldValue.SetBool(boolVal)
-	default:
-		fmt.Printf("Unsupported field type: %s for value: %s\n", fieldValue.Kind(), value)
-		return nil
-	}
-	return nil
 }
