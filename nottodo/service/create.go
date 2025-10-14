@@ -4,9 +4,9 @@ import (
 	"errors"
 
 	"github.com/akagiyui/go-together/common/model"
+	"github.com/akagiyui/go-together/common/validation"
 	"github.com/akagiyui/go-together/nottodo/repo"
 	"github.com/akagiyui/go-together/rest"
-	"github.com/akagiyui/go-together/rest/validation"
 )
 
 type CreateTodoRequest struct {
