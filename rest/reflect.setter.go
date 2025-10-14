@@ -5,6 +5,7 @@ import (
 	"io"
 	"mime/multipart"
 	"reflect"
+	"slices"
 	"strconv"
 )
 
@@ -69,6 +70,37 @@ func setFileScalarValue(fieldValue reflect.Value, fileHeader *multipart.FileHead
 		fieldValue.SetString(string(content))
 		return nil
 	}
+	return nil
+}
+
+// isValueCanBeNil 判断值是否可以为 nil
+func isValueCanBeNil(value reflect.Value) bool {
+	return slices.Contains([]reflect.Kind{reflect.Ptr, reflect.Interface, reflect.Slice, reflect.Map, reflect.Chan, reflect.Func}, value.Kind())
+}
+
+// setAnyValue 直接设置字段值
+func setAnyValue(fieldValue reflect.Value, sourceValue any) error {
+	if sourceValue == nil && fieldValue.Kind() == reflect.Ptr { // 处理 nil 值
+		fieldValue.Set(reflect.Zero(fieldValue.Type())) // 设置为真正的 nil，而不是零值
+		return nil
+	}
+
+	srcValue := reflect.ValueOf(sourceValue)
+
+	// 检查源值是否为 nil（针对指针、接口、切片、映射、通道、函数）
+	if isValueCanBeNil(srcValue) {
+		if srcValue.IsNil() && isValueCanBeNil(fieldValue) {
+			fieldValue.Set(reflect.Zero(fieldValue.Type()))
+			return nil
+		}
+	}
+
+	// 检查类型是否可以赋值
+	if !srcValue.Type().AssignableTo(fieldValue.Type()) {
+		return fmt.Errorf("source value type %s cannot be assigned to field type %s", srcValue.Type(), fieldValue.Type())
+	}
+
+	fieldValue.Set(srcValue) // 设置字段值
 	return nil
 }
 

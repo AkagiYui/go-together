@@ -28,7 +28,7 @@ type structInfo struct {
 type fieldInfo struct {
 	index     int
 	name      string
-	tagType   string // "query", "path", "header", "json", "form"
+	tagType   string // "query", "path", "header", "json", "form", "context"
 	tagValue  string
 	fieldType reflect.Type
 	isPtr     bool
@@ -56,6 +56,8 @@ func getStructInfo(t reflect.Type) *structInfo {
 				tagType, tagValue = "json", tag
 			} else if tag := field.Tag.Get("form"); tag != "" {
 				tagType, tagValue = "form", tag
+			} else if tag := field.Tag.Get("context"); tag != "" {
+				tagType, tagValue = "context", tag
 			}
 
 			if tagType != "" {
@@ -182,6 +184,12 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseJsonBo
 					return
 				}
 			}
+		case "context":
+			if contextValue, exists := ctx.Get(fieldInfo.tagValue); exists {
+				if err = setAnyValue(fieldValue, contextValue); err != nil {
+					return
+				}
+			}
 		case "json":
 			if ctx.BodyType == Json {
 				// 交给 json.Unmarshal 处理
@@ -236,6 +244,16 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseJsonBo
 		fieldValue := structValue.Field(i)
 		fieldType := field.Type
 
+		// 检查是否有任何 tag
+		hasTag := slices.ContainsFunc([]string{"query", "path", "header", "json", "form", "context"}, func(tag string) bool {
+			return field.Tag.Get(tag) != ""
+		})
+
+		// 如果有标签，跳过嵌套结构体处理
+		if hasTag {
+			continue
+		}
+
 		if fieldType.Kind() == reflect.Ptr {
 			if fieldValue.IsNil() {
 				fieldValue.Set(reflect.New(fieldType.Elem()))
@@ -244,18 +262,11 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseJsonBo
 		}
 
 		if fieldType.Kind() == reflect.Struct {
-			// 检查是否有任何 tag，如果没有才递归
-			hasTag := slices.ContainsFunc([]string{"query", "path", "header", "json", "form"}, func(tag string) bool {
-				return field.Tag.Get(tag) != ""
-			})
-
-			if !hasTag {
-				childNeedParseJsonBody, childErr := parseStructFields(fieldValue, ctx)
-				if childErr != nil {
-					return needParseJsonBody, childErr
-				}
-				needParseJsonBody = needParseJsonBody || childNeedParseJsonBody
+			childNeedParseJsonBody, childErr := parseStructFields(fieldValue, ctx)
+			if childErr != nil {
+				return needParseJsonBody, childErr
 			}
+			needParseJsonBody = needParseJsonBody || childNeedParseJsonBody
 		}
 	}
 
