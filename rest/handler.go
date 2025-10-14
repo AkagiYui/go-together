@@ -118,7 +118,7 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, []str
 			needParseJsonBody, err := parseParams(ctx, handlerInterface)
 			if err != nil {
 				ctx.Status(http.StatusBadRequest)
-				ctx.Result("Failed to parse parameters: " + err.Error())
+				ctx.SetResult("Failed to parse parameters: " + err.Error())
 				return
 			}
 
@@ -126,7 +126,7 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, []str
 			if needParseJsonBody && ctx.BodyType == Json && ctx.ContentLength > 0 {
 				if err := json.Unmarshal(ctx.FillBody(), handlerInterface); err != nil {
 					ctx.Status(http.StatusBadRequest)
-					ctx.Result("Invalid JSON format: " + err.Error())
+					ctx.SetResult("Invalid JSON format: " + err.Error())
 					return
 				}
 			}

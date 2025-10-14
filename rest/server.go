@@ -126,7 +126,7 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 			// response
 			if !ctx.responseAsStream {
 				ctx.writeHeaders()
-				server.writeResponse(w, ctx.result, ctx)
+				server.writeResponse(w, ctx.Result, ctx)
 			}
 		})
 	}
@@ -154,7 +154,7 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 			// response
 			if !ctx.responseAsStream {
 				ctx.writeHeaders()
-				server.writeResponse(w, ctx.result, ctx)
+				server.writeResponse(w, ctx.Result, ctx)
 			}
 		})
 	}

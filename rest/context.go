@@ -35,7 +35,7 @@ type Request struct {
 
 type Response struct {
 	statusCode int
-	result     any
+	Result     any
 	Headers    http.Header
 }
 
@@ -61,8 +61,8 @@ func (c *Response) Status(code int) {
 	c.statusCode = code
 }
 
-func (c *Response) Result(result any) {
-	c.result = result
+func (c *Response) SetResult(result any) {
+	c.Result = result
 }
 
 func (c *Response) Header(key, value string) {
@@ -125,7 +125,7 @@ func NewContext(r *http.Request, w *http.ResponseWriter, s *Server, runnerChain 
 		},
 		Response: Response{
 			statusCode: http.StatusOK,
-			result:     nil,
+			Result:     nil,
 			Headers:    make(http.Header),
 		},
 
@@ -149,7 +149,7 @@ func NewContext(r *http.Request, w *http.ResponseWriter, s *Server, runnerChain 
 		if !slices.Contains([]string{http.MethodGet}, ctx.Method) {
 			fmt.Printf("Method: %s, Content-Type: %s\n", ctx.Method, contentType)
 			ctx.Status(http.StatusBadRequest)
-			ctx.Result("Invalid Content-Type")
+			ctx.SetResult("Invalid Content-Type")
 			ctx.Abort()
 			return ctx
 		}
