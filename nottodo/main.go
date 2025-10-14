@@ -1,38 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-	"time"
-
 	"github.com/akagiyui/go-together/common/model"
+	"github.com/akagiyui/go-together/nottodo/middleware"
+	"github.com/akagiyui/go-together/nottodo/service"
 	"github.com/akagiyui/go-together/rest"
 )
-
-type TestRequest struct {
-	Test string `query:"test"`
-}
-
-func (r *TestRequest) Handle(ctx *rest.Context) {
-	println(r.Test)
-}
-
-func CORSMiddleware() rest.HandlerFunc {
-	return func(ctx *rest.Context) {
-		ctx.Response.Header("Access-Control-Allow-Origin", "*")
-		ctx.Response.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		ctx.Response.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		ctx.Response.Header("Access-Control-Allow-Credentials", "true")
-		ctx.Response.Header("Access-Control-Max-Age", "86400")
-
-		if ctx.Request.Method == "OPTIONS" {
-			ctx.Status(http.StatusNoContent)
-			ctx.SetResult(nil)
-			ctx.Abort()
-			return
-		}
-	}
-}
 
 func AuthMiddleware() rest.HandlerFunc {
 	return func(ctx *rest.Context) {
@@ -46,22 +19,11 @@ func AuthMiddleware() rest.HandlerFunc {
 	}
 }
 
-func TimeConsumeMiddleware() rest.HandlerFunc {
-	return func(ctx *rest.Context) {
-		beforeTime := time.Now()
-		ctx.Next()
-		afterTime := time.Now()
-		consumeMs := afterTime.Sub(beforeTime).Milliseconds()
-		fmt.Printf("consume: %dms\n", consumeMs)
-		ctx.Response.Header("X-Time-Consume", fmt.Sprintf("%dms", consumeMs))
-	}
-}
-
 func main() {
 	s := rest.NewServer()
 	s.Debug = true
 
-	s.UseFunc(CORSMiddleware(), TimeConsumeMiddleware())
+	s.UseFunc(middleware.CorsMiddleware(), middleware.TimeConsumeMiddleware())
 	s.UseFunc(func(ctx *rest.Context) {
 		ctx.Next()
 		if obj, ok := ctx.Result.(model.GeneralResponse); ok {
@@ -79,20 +41,15 @@ func main() {
 		},
 	)
 
-	s.GetFunc("/healthz", func(ctx *rest.Context) {
-		ctx.Set("test", "123\n")
-		ctx.SetResult(model.Success("Hello, World!"))
-	}, func(ctx *rest.Context) {
-		println(ctx.Get("test"))
-	})
+	s.GetFunc("/healthz", func(ctx *rest.Context) {})
 
 	todoGroup := s.Group("/todos", AuthMiddleware())
 	{
-		todoGroup.Get("", &TestRequest{}, &GetTodosRequest{})
-		todoGroup.Get("/{id}", &GetTodoByIDRequest{})
-		todoGroup.Post("", &CreateTodoRequest{})
-		todoGroup.Put("/{id}", &UpdateTodoRequest{})
-		todoGroup.Delete("/{id}", &DeleteTodoRequest{})
+		todoGroup.Get("", &service.GetTodosRequest{})
+		todoGroup.Get("/{id}", &service.GetTodoByIDRequest{})
+		todoGroup.Post("", &service.CreateTodoRequest{})
+		todoGroup.Put("/{id}", &service.UpdateTodoRequest{})
+		todoGroup.Delete("/{id}", &service.DeleteTodoRequest{})
 	}
 
 	println("🚀 Server starting on http://localhost:8080")

@@ -1,4 +1,6 @@
-package main
+package repo
+
+import "time"
 
 // Todo 结构体定义
 type Todo struct {
@@ -32,4 +34,45 @@ func init() {
 		},
 	}
 	nextID = 3
+}
+
+func GetTodos() ([]Todo, int) {
+	return todos, len(todos)
+}
+
+func GetTodoByID(id int) (Todo, bool) {
+	for _, todo := range todos {
+		if todo.ID == id {
+			return todo, true
+		}
+	}
+	return Todo{}, false
+}
+
+func UpdateTodo(todo Todo) bool {
+	for i, t := range todos {
+		if t.ID == todo.ID {
+			todos[i] = todo
+			return true
+		}
+	}
+	return false
+}
+
+func DeleteTodo(id int) bool {
+	for i, todo := range todos {
+		if todo.ID == id {
+			todos = append(todos[:i], todos[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+func CreateTodo(todo Todo) bool {
+	todo.ID = nextID
+	todo.CreatedAt = time.Now().Format("2006-01-02 15:04:05")
+	nextID++
+	todos = append(todos, todo)
+	return true
 }

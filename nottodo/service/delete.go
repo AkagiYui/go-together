@@ -1,7 +1,8 @@
-package main
+package service
 
 import (
 	"github.com/akagiyui/go-together/common/model"
+	"github.com/akagiyui/go-together/nottodo/repo"
 	"github.com/akagiyui/go-together/rest"
 )
 
@@ -11,12 +12,9 @@ type DeleteTodoRequest struct {
 
 func (r *DeleteTodoRequest) Handle(ctx *rest.Context) {
 	println("DeleteTodoRequest")
-	for i, todo := range todos {
-		if todo.ID == r.ID {
-			todos = append(todos[:i], todos[i+1:]...)
-			ctx.SetResult(model.Success(todo))
-			return
-		}
+	if repo.DeleteTodo(r.ID) {
+		ctx.SetResult(model.Success(nil))
+	} else {
+		ctx.SetResult(model.Error(model.NOT_FOUND, "Todo not found"))
 	}
-	ctx.SetResult(model.Error(model.NOT_FOUND, "Todo not found"))
 }

@@ -1,14 +1,13 @@
-package main
+package service
 
 import (
-	"time"
-
 	"github.com/akagiyui/go-together/common/model"
+	"github.com/akagiyui/go-together/nottodo/repo"
 	"github.com/akagiyui/go-together/rest"
 )
 
 type CreateTodoRequest struct {
-	Todo
+	repo.Todo
 }
 
 func (r *CreateTodoRequest) Handle(ctx *rest.Context) {
@@ -20,15 +19,15 @@ func (r *CreateTodoRequest) Handle(ctx *rest.Context) {
 	}
 
 	// 创建新的 Todo
-	newTodo := Todo{
-		ID:          nextID,
+	newTodo := repo.Todo{
 		Title:       r.Title,
 		Description: r.Description,
 		Completed:   r.Completed,
-		CreatedAt:   time.Now().Format("2006-01-02 15:04:05"),
 	}
 
-	nextID++
-	todos = append(todos, newTodo)
-	ctx.SetResult(model.Success(newTodo))
+	if repo.CreateTodo(newTodo) {
+		ctx.SetResult(model.Success(newTodo))
+	} else {
+		ctx.SetResult(model.InternalError())
+	}
 }

@@ -9,13 +9,15 @@ const (
 	INPUT_ERROR
 	NOT_FOUND
 	UNAUTHORIZED
+	INTERNAL_ERROR
 )
 
 var statusMap = map[BusinessCode]int{
-	SUCCESS:      http.StatusOK,
-	INPUT_ERROR:  http.StatusBadRequest,
-	NOT_FOUND:    http.StatusNotFound,
-	UNAUTHORIZED: http.StatusUnauthorized,
+	SUCCESS:        http.StatusOK,
+	INPUT_ERROR:    http.StatusBadRequest,
+	NOT_FOUND:      http.StatusNotFound,
+	UNAUTHORIZED:   http.StatusUnauthorized,
+	INTERNAL_ERROR: http.StatusInternalServerError,
 }
 
 // 将业务错误码转换为 HTTP 状态码
@@ -46,6 +48,10 @@ func Error(code BusinessCode, message string) GeneralResponse {
 		Data:    nil,
 		Code:    code,
 	}
+}
+
+func InternalError() GeneralResponse {
+	return Error(INTERNAL_ERROR, "Internal Server Error")
 }
 
 type PageData struct {
