@@ -11,7 +11,7 @@
 - `header` - 请求头
 - `json` - JSON 请求体
 - `form` - 表单参数
-- `context` - Context.Memory 中的值（用于中间件传递数据）
+- `context` - Context.Memory 中的值（用于 handler 链向后传递数据）
 
 ```golang
 package main
@@ -54,7 +54,7 @@ curl -X POST "http://localhost:8080/hello/123/zgm/456/ddi.txt?name=akagi" \
 
 ## Context 标签使用示例
 
-`context` 标签用于从 Context.Memory 中自动注入值到 handler 结构体字段，常用于中间件传递数据。
+`context` 标签用于从 Context.Memory 中自动注入值到 handler 结构体字段，常用于 handler 之间传递数据。
 
 ```golang
 // 认证前置 handler - 设置用户信息到 Context

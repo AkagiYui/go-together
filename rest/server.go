@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
+	"runtime"
 	"strconv"
 )
 
@@ -27,10 +29,12 @@ func NewServer() *Server {
 //
 // preBasePath 上一级路由组的路径
 // prePreRunnerChain 上一级路由组的前置 handler 链
-func flattenFactories(group *RouteGroup, preBasePath string, prePreRunnerChain []HandlerFunc) []HandlerFactory {
+// prePreRunnerNames 上一级路由组的前置 handler 名称链
+func flattenFactories(group *RouteGroup, preBasePath string, prePreRunnerChain []HandlerFunc, prePreRunnerNames []string) []HandlerFactory {
 	factories := make([]HandlerFactory, 0)                                   // 这一级路由组的所有路由
 	thisBasePath := preBasePath + group.BasePath                             // 当前路由组的路径
 	thisPreRunnerChain := append(prePreRunnerChain, group.PreRunnerChain...) // 当前路由组的前置 handler 链
+	thisPreRunnerNames := append(prePreRunnerNames, group.PreRunnerNames...) // 当前路由组的前置 handler 名称链
 	// 处理当前路由组的路由
 	for _, factory := range group.Factories {
 		factory.Path = thisBasePath + factory.Path // 上一级路由组的路径 + 当前路由组的路径 + 当前路由的路径
@@ -41,11 +45,17 @@ func flattenFactories(group *RouteGroup, preBasePath string, prePreRunnerChain [
 		newRunnerChain = append(newRunnerChain, factory.RunnerChain...)
 		factory.RunnerChain = newRunnerChain
 
+		// 合并当前路由组的前置 handler 名称链和当前路由的 handler 名称链
+		newHandlerNames := make([]string, 0, len(thisPreRunnerNames)+len(factory.HandlerNames))
+		newHandlerNames = append(newHandlerNames, thisPreRunnerNames...)
+		newHandlerNames = append(newHandlerNames, factory.HandlerNames...)
+		factory.HandlerNames = newHandlerNames
+
 		factories = append(factories, factory)
 	}
 	// 递归处理子路由组
 	for _, childGroup := range group.ChildGroups {
-		factories = append(factories, flattenFactories(childGroup, thisBasePath, thisPreRunnerChain)...)
+		factories = append(factories, flattenFactories(childGroup, thisBasePath, thisPreRunnerChain, thisPreRunnerNames)...)
 	}
 	return factories
 }
@@ -55,9 +65,28 @@ func (s *Server) Run(addr string) error {
 	registerRouteGroup(mux, &s.RouteGroup, s) // 处理所有注册的 handler
 
 	if s.Debug {
+		// 计算最长路径长度，用于对齐
+		endpointMaxLen := 0
+		for _, factory := range s.flattenFactories {
+			if len(factory.Path) > endpointMaxLen {
+				endpointMaxLen = len(factory.Path)
+			}
+		}
+
 		// 输出所有注册的路由
 		for _, factory := range s.flattenFactories {
-			fmt.Printf("[%7s] %s\n", factory.Method, factory.Path)
+			handlerCount := len(factory.RunnerChain)
+			// 优先使用 HandlerNames 中的最后一个名称，如果没有则使用反射获取
+			var lastHandlerName string
+			if len(factory.HandlerNames) > 0 && len(factory.HandlerNames) == handlerCount {
+				// HandlerNames 与 RunnerChain 长度一致时，使用存储的名称
+				lastHandlerName = factory.HandlerNames[handlerCount-1]
+			} else {
+				// 否则使用反射获取函数名称
+				lastHandlerName = runtime.FuncForPC(reflect.ValueOf(factory.RunnerChain[handlerCount-1]).Pointer()).Name()
+			}
+			// 使用格式化字符串实现左对齐
+			fmt.Printf("[%7s] %-*s --> %s (%d handlers)\n", factory.Method, endpointMaxLen, factory.Path, lastHandlerName, handlerCount)
 		}
 	}
 
@@ -65,7 +94,7 @@ func (s *Server) Run(addr string) error {
 }
 
 func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
-	factories := flattenFactories(group, "", make([]HandlerFunc, 0))
+	factories := flattenFactories(group, "", make([]HandlerFunc, 0), make([]string, 0))
 	server.flattenFactories = factories
 	for _, factory := range factories {
 		// 构建路由路径

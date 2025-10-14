@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/textproto"
 	"reflect"
+	"runtime"
 	"slices"
 
 	"github.com/akagiyui/go-together/common/cache"
@@ -76,9 +77,16 @@ func getStructInfo(t reflect.Type) *structInfo {
 	})
 }
 
+// funcName 获取 HandlerFunc 的函数名称
+func funcName(f HandlerFunc) string {
+	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+}
+
 // runnersFromHandlers 将实现 HandlerInterface 的结构体类型转换为每次请求创建新实例并执行的 HandlerFunc 序列
-func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, error) {
+// 返回 HandlerFunc 列表、对应的名称列表和错误
+func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, []string, error) {
 	runners := make([]HandlerFunc, 0, len(handlerTypes))
+	names := make([]string, 0, len(handlerTypes))
 	it := reflect.TypeOf((*HandlerInterface)(nil)).Elem()
 
 	for _, handlerType := range handlerTypes {
@@ -89,8 +97,12 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, error
 
 		// 确保实现了 HandlerInterface
 		if !reflect.PointerTo(t).Implements(it) {
-			return nil, ErrHandlerNotImplementHandlerInterface{}
+			return nil, nil, ErrHandlerNotImplementHandlerInterface{}
 		}
+
+		// 保存原始类型名称
+		typeName := t.PkgPath() + "." + t.Name()
+		names = append(names, typeName)
 
 		// handler 仅处理该 handler 需要的数据，所有 handler 共用的数据请在 Context 中处理
 		runner := func(ctx *Context) {
@@ -125,7 +137,7 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, error
 		runners = append(runners, runner)
 	}
 
-	return runners, nil
+	return runners, names, nil
 }
 
 // parseParams 解析query参数和path参数和header参数到结构体字段
