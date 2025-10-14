@@ -23,6 +23,11 @@ func main() {
 	s := rest.NewServer()
 	s.Debug = true
 
+	// 设置全局校验错误处理器
+	s.SetValidationErrorHandler(func(ctx *rest.Context, err error) {
+		ctx.SetResult(model.Error(model.INPUT_ERROR, err.Error()))
+	})
+
 	s.UseFunc(middleware.CorsMiddleware(), middleware.TimeConsumeMiddleware())
 	s.UseFunc(func(ctx *rest.Context) {
 		ctx.Next()
