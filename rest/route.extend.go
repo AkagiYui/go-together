@@ -18,6 +18,14 @@ func (g *RouteGroup) Delete(path string, handlerType ...HandlerInterface) error 
 	return g.Handle(path, http.MethodDelete, handlerType...)
 }
 
+func (g *RouteGroup) Patch(path string, handlerType ...HandlerInterface) error {
+	return g.Handle(path, http.MethodPatch, handlerType...)
+}
+
+func (g *RouteGroup) Any(path string, handlerType ...HandlerInterface) error {
+	return g.Handle(path, "", handlerType...)
+}
+
 // 便捷方法：支持 HandlerFunc 的 HTTP 方法
 func (g *RouteGroup) GetFunc(path string, handlerFunc ...HandlerFunc) error {
 	g.HandleFunc(path, http.MethodGet, handlerFunc...)
@@ -34,7 +42,17 @@ func (g *RouteGroup) PutFunc(path string, handlerFunc ...HandlerFunc) error {
 	return nil
 }
 
-func (g *RouteGroup) DeleteEFunc(path string, handlerFunc ...HandlerFunc) error {
+func (g *RouteGroup) DeleteFunc(path string, handlerFunc ...HandlerFunc) error {
 	g.HandleFunc(path, http.MethodDelete, handlerFunc...)
+	return nil
+}
+
+func (g *RouteGroup) PatchFunc(path string, handlerFunc ...HandlerFunc) error {
+	g.HandleFunc(path, http.MethodPatch, handlerFunc...)
+	return nil
+}
+
+func (g *RouteGroup) AnyFunc(path string, handlerFunc ...HandlerFunc) error {
+	g.HandleFunc(path, "", handlerFunc...)
 	return nil
 }
