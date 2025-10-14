@@ -6,6 +6,7 @@ import (
 	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/nottodo/repo"
 	"github.com/akagiyui/go-together/rest"
+	"github.com/akagiyui/go-together/rest/validation"
 )
 
 type UpdateTodoRequest struct {
@@ -15,16 +16,16 @@ type UpdateTodoRequest struct {
 
 // Validate 实现 Validator 接口，校验更新 Todo 的请求参数
 func (r *UpdateTodoRequest) Validate() error {
-	if r.ID <= 0 {
-		return errors.New("ID 必须大于 0")
+	errs := make([]error, 0)
+	errs = append(errs, validation.Positive(r.ID, "ID"))
+	errs = append(errs, validation.MaxLength(r.Description, 500, "描述"))
+
+	// 校验标题（如果提供）
+	if r.Title != "" {
+		errs = append(errs, validation.MaxLength(r.Title, 100, "标题"))
 	}
-	if r.Title != "" && len(r.Title) > 100 {
-		return errors.New("标题长度不能超过100个字符")
-	}
-	if len(r.Description) > 500 {
-		return errors.New("描述长度不能超过500个字符")
-	}
-	return nil
+
+	return errors.Join(errs...)
 }
 
 func (r *UpdateTodoRequest) Handle(ctx *rest.Context) {

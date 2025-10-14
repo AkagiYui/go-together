@@ -1,11 +1,10 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/nottodo/repo"
 	"github.com/akagiyui/go-together/rest"
+	"github.com/akagiyui/go-together/rest/validation"
 )
 
 type GetTodosRequest struct{}
@@ -25,10 +24,7 @@ type GetTodoByIDRequest struct {
 
 // Validate 实现 Validator 接口，校验获取单个 Todo 的请求参数
 func (r *GetTodoByIDRequest) Validate() error {
-	if r.ID <= 0 {
-		return errors.New("ID 必须大于 0")
-	}
-	return nil
+	return validation.Positive(r.ID, "ID")
 }
 
 func (r *GetTodoByIDRequest) Handle(ctx *rest.Context) {
