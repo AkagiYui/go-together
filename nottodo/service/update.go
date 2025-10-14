@@ -19,14 +19,11 @@ func (r *UpdateTodoRequest) Handle(ctx *rest.Context) {
 		return
 	}
 
-	if r.Todo.Title == "" {
-		oriTodo.Title = oriTodo.Title
+	if r.Todo.Title != "" {
+		oriTodo.Title = r.Todo.Title
 	}
-	if r.Todo.Description == "" {
-		oriTodo.Description = oriTodo.Description
-	}
-	if !r.Todo.Completed {
-		oriTodo.Completed = oriTodo.Completed
+	if r.Todo.Description != "" {
+		oriTodo.Description = r.Todo.Description
 	}
 
 	if repo.UpdateTodo(oriTodo) {
