@@ -27,7 +27,7 @@ func CORSMiddleware() rest.HandlerFunc {
 
 		if ctx.Request.Method == "OPTIONS" {
 			ctx.Status(http.StatusNoContent)
-			ctx.Result(nil)
+			ctx.SetResult(nil)
 			ctx.Abort()
 			return
 		}
@@ -39,8 +39,7 @@ func AuthMiddleware() rest.HandlerFunc {
 		// 验证 token
 		token := ctx.Request.Header.Get("Authorization")
 		if token != "Bearer 123" {
-			ctx.Status(http.StatusUnauthorized)
-			ctx.Result(model.Error(model.UNAUTHORIZED, "Unauthorized"))
+			ctx.SetResult(model.Error(model.UNAUTHORIZED, "Unauthorized"))
 			ctx.Abort()
 			return
 		}
@@ -63,6 +62,12 @@ func main() {
 	s.Debug = true
 
 	s.UseFunc(CORSMiddleware(), TimeConsumeMiddleware())
+	s.UseFunc(func(ctx *rest.Context) {
+		ctx.Next()
+		if obj, ok := ctx.Result.(model.GeneralResponse); ok {
+			ctx.Status(model.HttpStatus(obj.Code))
+		}
+	})
 
 	// 设置 404 处理器
 	s.SetNotFoundHandlers(
@@ -70,13 +75,13 @@ func main() {
 			ctx.Response.Header("X-Custom", "NotFound")
 		},
 		func(ctx *rest.Context) {
-			ctx.Result(model.Error(model.NOT_FOUND, "Route not found"))
+			ctx.SetResult(model.Error(model.NOT_FOUND, "Route not found"))
 		},
 	)
 
 	s.GetFunc("/healthz", func(ctx *rest.Context) {
 		ctx.Set("test", "123\n")
-		ctx.Result(model.Success("Hello, World!"))
+		ctx.SetResult(model.Success("Hello, World!"))
 	}, func(ctx *rest.Context) {
 		println(ctx.Get("test"))
 	})

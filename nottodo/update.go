@@ -1,8 +1,6 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/rest"
 )
@@ -26,10 +24,9 @@ func (r *UpdateTodoRequest) Handle(ctx *rest.Context) {
 			r.Todo.CreatedAt = oriTodo.CreatedAt
 
 			todos[i] = r.Todo
-			ctx.Result(model.Success(todos[i]))
+			ctx.SetResult(model.Success(todos[i]))
 			return
 		}
 	}
-	ctx.Status(http.StatusNotFound)
-	ctx.Result(model.Error(model.SUCCESS, "Todo not found"))
+	ctx.SetResult(model.Error(model.NOT_FOUND, "Todo not found"))
 }

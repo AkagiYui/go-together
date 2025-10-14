@@ -1,8 +1,6 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/rest"
 )
@@ -16,10 +14,9 @@ func (r *DeleteTodoRequest) Handle(ctx *rest.Context) {
 	for i, todo := range todos {
 		if todo.ID == r.ID {
 			todos = append(todos[:i], todos[i+1:]...)
-			ctx.Result(model.Success(todo))
+			ctx.SetResult(model.Success(todo))
 			return
 		}
 	}
-	ctx.Status(http.StatusNotFound)
-	ctx.Result(model.Error(model.SUCCESS, "Todo not found"))
+	ctx.SetResult(model.Error(model.NOT_FOUND, "Todo not found"))
 }

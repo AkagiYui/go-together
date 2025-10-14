@@ -15,7 +15,7 @@ func (r *CreateTodoRequest) Handle(ctx *rest.Context) {
 	println("CreateTodoRequest")
 	// 验证必填字段
 	if r.Title == "" {
-		ctx.Result(model.Error(model.INPUT_ERROR, "Title is required"))
+		ctx.SetResult(model.Error(model.INPUT_ERROR, "Title is required"))
 		return
 	}
 
@@ -30,5 +30,5 @@ func (r *CreateTodoRequest) Handle(ctx *rest.Context) {
 
 	nextID++
 	todos = append(todos, newTodo)
-	ctx.Result(model.Success(newTodo))
+	ctx.SetResult(model.Success(newTodo))
 }
