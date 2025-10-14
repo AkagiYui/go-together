@@ -6,6 +6,12 @@ type HandlerInterface interface {
 	Handle(*Context)
 }
 
+// Validator 接口用于在参数绑定后、业务处理前进行数据校验
+// 实现此接口的 handler 会在 Handle 方法调用前自动执行 Validate 方法
+type Validator interface {
+	Validate() error
+}
+
 // HandlerFactory 用于创建 handler 实例的工厂
 type HandlerFactory struct {
 	Path         string

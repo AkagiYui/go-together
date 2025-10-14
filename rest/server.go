@@ -17,6 +17,9 @@ type Server struct {
 	// 404 处理器
 	notFoundHandlers []HandlerFunc
 	notFoundNames    []string
+
+	// 校验错误处理器
+	validationErrorHandler func(*Context, error)
 }
 
 func NewServer() *Server {
@@ -24,9 +27,22 @@ func NewServer() *Server {
 		RouteGroup:       NewRouteGroup(nil, ""),
 		Debug:            false,
 		flattenFactories: nil,
+
+		notFoundHandlers: nil,
+		notFoundNames:    nil,
+
+		validationErrorHandler: nil,
 	}
 	server.RouteGroup.server = server
+
 	return server
+}
+
+// SetValidationErrorHandler 设置全局校验错误处理器
+// 当 handler 实现了 Validator 接口且 Validate() 返回错误时，会调用此处理器
+// 如果未设置，将使用默认的错误处理（返回 400 状态码和错误信息）
+func (s *Server) SetValidationErrorHandler(handler func(*Context, error)) {
+	s.validationErrorHandler = handler
 }
 
 // flattenFactories 递归地将路由组中的路由展开为一个列表

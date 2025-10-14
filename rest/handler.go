@@ -131,6 +131,19 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, []str
 				}
 			}
 
+			// 执行校验（如果 handler 实现了 Validator 接口）
+			if validator, ok := handler.(Validator); ok {
+				if err := validator.Validate(); err != nil {
+					if ctx.Server.validationErrorHandler != nil {
+						ctx.Server.validationErrorHandler(ctx, err)
+					} else {
+						ctx.Status(http.StatusBadRequest)
+						ctx.SetResult("Validation failed: " + err.Error())
+					}
+					return
+				}
+			}
+
 			handler.Handle(ctx) // 调用 handler
 		}
 
