@@ -10,9 +10,13 @@ import (
 )
 
 type Server struct {
-	RouteGroup       // 用于开发者组织路由
+	RouteGroup       // 用于为用户组织路由
 	Debug            bool
 	flattenFactories []HandlerFactory // 最终注册的所有路由
+
+	// 404 处理器
+	notFoundHandlers []HandlerFunc
+	notFoundNames    []string
 }
 
 func NewServer() *Server {
@@ -96,6 +100,8 @@ func (s *Server) Run(addr string) error {
 func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 	factories := flattenFactories(group, "", make([]HandlerFunc, 0), make([]string, 0))
 	server.flattenFactories = factories
+
+	// 注册用户路由
 	for _, factory := range factories {
 		// 构建路由路径
 		pattern := factory.Path
@@ -106,6 +112,34 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 		mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 			ctx := NewContext(r, &w, server, factory.RunnerChain) // 创建上下文
 
+			defer func() {
+				if err := recover(); err != nil {
+					fmt.Println(err)
+					w.WriteHeader(http.StatusInternalServerError)
+					w.Write([]byte("Internal Server Error"))
+				}
+			}()
+
+			// dispatch request
+			ctx.Next()
+
+			// response
+			if !ctx.responseAsStream {
+				ctx.writeHeaders()
+				server.writeResponse(w, ctx.result, ctx)
+			}
+		})
+	}
+
+	// 注册 404 处理器（捕获所有未匹配的请求）
+	if len(server.notFoundHandlers) > 0 {
+		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			handlers := make([]HandlerFunc, 0, len(server.PreRunnerChain)+len(server.notFoundHandlers))
+			handlers = append(handlers, server.PreRunnerChain...)
+			handlers = append(handlers, server.notFoundHandlers...)
+
+			ctx := NewContext(r, &w, server, handlers)
+			ctx.Status(http.StatusNotFound) // 默认设置 404 状态码
 			defer func() {
 				if err := recover(); err != nil {
 					fmt.Println(err)
@@ -157,4 +191,24 @@ func (s *Server) writeResponse(w http.ResponseWriter, result any, ctx *Context) 
 		w.WriteHeader(ctx.statusCode)
 		w.Write(b)
 	}
+}
+
+// SetNotFoundHandlers 设置 404 处理器
+func (s *Server) SetNotFoundHandlers(handlers ...HandlerFunc) {
+	s.notFoundHandlers = handlers
+	s.notFoundNames = make([]string, len(handlers))
+	for i, f := range handlers {
+		s.notFoundNames[i] = funcName(f)
+	}
+}
+
+// SetNotFound 设置 404 处理器（支持 HandlerInterface）
+func (s *Server) SetNotFound(handlers ...HandlerInterface) error {
+	runners, names, err := runnersFromHandlers(handlers...)
+	if err != nil {
+		return err
+	}
+	s.notFoundHandlers = runners
+	s.notFoundNames = names
+	return nil
 }
