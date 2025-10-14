@@ -64,6 +64,16 @@ func main() {
 
 	s.UseFunc(CORSMiddleware(), TimeConsumeMiddleware())
 
+	// 设置 404 处理器
+	s.SetNotFoundHandlers(
+		func(ctx *rest.Context) {
+			ctx.Response.Header("X-Custom", "NotFound")
+		},
+		func(ctx *rest.Context) {
+			ctx.Result(model.Error(model.NOT_FOUND, "Route not found"))
+		},
+	)
+
 	s.GetFunc("/healthz", func(ctx *rest.Context) {
 		ctx.Set("test", "123\n")
 		ctx.Result(model.Success("Hello, World!"))
