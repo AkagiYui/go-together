@@ -64,7 +64,7 @@ func main() {
 
 	s.UseFunc(CORSMiddleware(), TimeConsumeMiddleware())
 
-	s.GETFunc("/healthz", func(ctx *rest.Context) {
+	s.GetFunc("/healthz", func(ctx *rest.Context) {
 		ctx.Set("test", "123\n")
 		ctx.Result(model.Success("Hello, World!"))
 	}, func(ctx *rest.Context) {
@@ -73,11 +73,11 @@ func main() {
 
 	todoGroup := s.Group("/todos", AuthMiddleware())
 	{
-		todoGroup.GET("", &TestRequest{}, &GetTodosRequest{})
-		todoGroup.GET("/{id}", &GetTodoByIDRequest{})
-		todoGroup.POST("", &CreateTodoRequest{})
-		todoGroup.PUT("/{id}", &UpdateTodoRequest{})
-		todoGroup.DELETE("/{id}", &DeleteTodoRequest{})
+		todoGroup.Get("", &TestRequest{}, &GetTodosRequest{})
+		todoGroup.Get("/{id}", &GetTodoByIDRequest{})
+		todoGroup.Post("", &CreateTodoRequest{})
+		todoGroup.Put("/{id}", &UpdateTodoRequest{})
+		todoGroup.Delete("/{id}", &DeleteTodoRequest{})
 	}
 
 	println("🚀 Server starting on http://localhost:8080")
