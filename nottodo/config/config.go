@@ -12,7 +12,8 @@ import (
 // 默认生产模式
 //
 // 使用方式：
-//   if cfg.Mode == ModeDev { ... }
+//
+//	if cfg.Mode == ModeDev { ... }
 type Mode int
 
 const (

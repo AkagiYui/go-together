@@ -61,4 +61,3 @@ func ClearValidators() {
 	defer validatorMutex.Unlock()
 	customValidators = make(map[string]ValidatorFunc)
 }
-
