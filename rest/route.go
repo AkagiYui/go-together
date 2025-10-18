@@ -46,6 +46,12 @@ func (g *RouteGroup) HandleFunc(path string, method string, handlerFuncs ...Hand
 		RunnerChain:  nil,
 		HandlerNames: nil,
 	}
+
+	// TODO 允许空方法列表，添加一个默认的空方法
+	if len(handlerFuncs) == 0 {
+		handlerFuncs = append(handlerFuncs, func(ctx *Context) {})
+	}
+
 	factory.RunnerChain = handlerFuncs
 	// 获取函数名称
 	factory.HandlerNames = make([]string, len(handlerFuncs))
