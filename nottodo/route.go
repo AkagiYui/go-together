@@ -2,8 +2,16 @@ package main
 
 import (
 	"github.com/akagiyui/go-together/nottodo/middleware"
-	"github.com/akagiyui/go-together/nottodo/service"
+	service "github.com/akagiyui/go-together/nottodo/service/todo"
 )
+
+const comment = `🚀 Server starting on http://localhost:8080
+📚 API Documentation:
+GET    /v1/todos        - 获取所有Todo
+GET    /v1/todos/{id}   - 获取指定ID的Todo
+POST   /v1/todos        - 创建Todo
+PUT    /v1/todos/{id}   - 更新指定ID的Todo
+DELETE /v1/todos/{id}   - 删除指定ID的Todo`
 
 func init() {
 	v1 := s.Group("/v1")
@@ -17,11 +25,5 @@ func init() {
 		todoGroup.Delete("/{id}", &service.DeleteTodoRequest{})
 	}
 
-	println("🚀 Server starting on http://localhost:8080")
-	println("📚 API Documentation:")
-	println("  GET    /v1/todos        - 获取所有Todo")
-	println("  GET    /v1/todos/{id}   - 获取指定ID的Todo")
-	println("  POST   /v1/todos        - 创建Todo")
-	println("  PUT    /v1/todos/{id}   - 更新指定ID的Todo")
-	println("  DELETE /v1/todos/{id}   - 删除指定ID的Todo")
+	println(comment)
 }

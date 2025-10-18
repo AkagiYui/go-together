@@ -3,7 +3,7 @@ package service
 import (
 	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/common/validation"
-	"github.com/akagiyui/go-together/nottodo/repo"
+	repo "github.com/akagiyui/go-together/nottodo/repo/todo"
 	"github.com/akagiyui/go-together/rest"
 )
 
