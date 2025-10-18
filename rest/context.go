@@ -54,7 +54,7 @@ type Context struct {
 	currentRunnerIndex int           // 私有索引：当前执行位置
 	runnerChain        []HandlerFunc // 当前请求的执行链
 
-	responseAsStream bool
+	disableInternalResponse bool
 }
 
 func (c *Response) Status(code int) {
@@ -140,7 +140,7 @@ func NewContext(r *http.Request, w *http.ResponseWriter, s *Server, runnerChain 
 		currentRunnerIndex: -1,
 		runnerChain:        runnerChain,
 
-		responseAsStream: false,
+		disableInternalResponse: false,
 	}
 
 	// 解析请求体类型
@@ -260,7 +260,7 @@ func (c *Context) FillBody() []byte {
 }
 
 func (c *Context) Stream(step func(w io.Writer) bool) bool {
-	c.responseAsStream = true
+	c.disableInternalResponse = true
 	c.Response.Headers.Add("Transfer-Encoding", "chunked")
 	c.writeHeaders()
 
@@ -286,4 +286,8 @@ func (c *Context) writeHeaders() {
 			(*c.OriginalWriter).Header().Add(key, value)
 		}
 	}
+}
+
+func (c *Context) DisableInternalResponse() {
+	c.disableInternalResponse = true
 }
