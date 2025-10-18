@@ -1,0 +1,48 @@
+# 第一阶段：构建阶段
+FROM docker.io/library/golang:1.24.5-alpine AS builder
+
+# 安装构建依赖
+RUN apk add --no-cache git ca-certificates
+
+# 设置工作目录
+WORKDIR /build
+
+# 复制 go.work 和所有模块的 go.mod 文件
+COPY go.work go.work.sum ./
+COPY nottodo/go.mod nottodo/go.sum* nottodo/
+COPY rest/go.mod rest/go.sum* rest/
+COPY common/go.mod common/go.sum* common/
+
+# 下载依赖
+WORKDIR /build/nottodo
+RUN go mod download
+
+# 复制源代码
+WORKDIR /build
+COPY nottodo/ nottodo/
+COPY rest/ rest/
+COPY common/ common/
+
+# 构建二进制文件
+WORKDIR /build/nottodo
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH:-amd64} \
+    go build -a -installsuffix cgo -ldflags="-w -s" -o /nottodo .
+
+# 第二阶段：运行阶段
+FROM scratch
+
+# 从 alpine 复制 SSL 证书
+COPY --from=docker.io/library/alpine:latest /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+# 复制编译好的二进制文件
+COPY --from=builder /nottodo /nottodo
+
+# 设置工作目录
+WORKDIR /
+
+# 暴露端口
+EXPOSE 8080
+
+# 设置入口点
+ENTRYPOINT ["/nottodo"]
+
