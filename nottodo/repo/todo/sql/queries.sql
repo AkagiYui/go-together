@@ -1,3 +1,5 @@
+-- 本文件用于存放 Todo 相关的 SQL 语句，按 sqlc 约定的注释格式标注方法名
+
 -- name: ListTodos :many
 SELECT id, title, description, completed, created_at
 FROM todos

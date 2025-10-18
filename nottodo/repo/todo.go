@@ -1,68 +1,52 @@
 package repo
 
-// Todo 结构体定义
-type Todo struct {
-    ID          int    `json:"id"`
-    Title       string `json:"title"`
-    Description string `json:"description"`
-    Completed   bool   `json:"completed"`
-    CreatedAt   string `json:"created_at"`
+import (
+    "context"
+
+    todogen "github.com/akagiyui/go-together/nottodo/repo/todo"
+)
+
+// 兼容旧的仓储接口，内部转调 sqlc 生成的查询
+// 注意：这里不再编写任何原生 SQL
+
+type Todo = todogen.Todo
+
+func GetTodos(ctx context.Context) ([]Todo, int, error) {
+    list, err := TodoQueries.ListTodos(ctx)
+    if err != nil {
+        return nil, 0, err
+    }
+    return list, len(list), nil
 }
 
-// 基于 PostgreSQL 的 CRUD 实现
-
-func GetTodos() ([]Todo, int) {
-    rows, err := db.Query(`SELECT id, title, description, completed, created_at FROM todos ORDER BY id`)
+func GetTodoByID(ctx context.Context, id int) (Todo, bool, error) {
+    t, err := TodoQueries.GetTodo(ctx, id)
     if err != nil {
-        return []Todo{}, 0
+        return Todo{}, false, err
     }
-    list, err := scanTodoRows(rows)
-    if err != nil {
-        return []Todo{}, 0
-    }
-    return list, len(list)
+    return t, true, nil
 }
 
-func GetTodoByID(id int) (Todo, bool) {
-    row := db.QueryRow(`SELECT id, title, description, completed, created_at FROM todos WHERE id = $1`, id)
-    t, err := scanTodoRow(row)
+func UpdateTodo(ctx context.Context, todo Todo) (bool, error) {
+    affected, err := TodoQueries.UpdateTodo(ctx, todo.ID, todo.Title, todo.Description, todo.Completed)
     if err != nil {
-        return Todo{}, false
+        return false, err
     }
-    return t, true
+    return affected > 0, nil
 }
 
-func UpdateTodo(todo Todo) bool {
-    res, err := db.Exec(`UPDATE todos SET title = $1, description = $2, completed = $3 WHERE id = $4`,
-        todo.Title, todo.Description, todo.Completed, todo.ID)
+func DeleteTodo(ctx context.Context, id int) (bool, error) {
+    affected, err := TodoQueries.DeleteTodo(ctx, id)
     if err != nil {
-        return false
+        return false, err
     }
-    affected, _ := res.RowsAffected()
-    return affected > 0
+    return affected > 0, nil
 }
 
-func DeleteTodo(id int) bool {
-    res, err := db.Exec(`DELETE FROM todos WHERE id = $1`, id)
+func CreateTodo(ctx context.Context, todo Todo) (Todo, bool, error) {
+    created, err := TodoQueries.CreateTodo(ctx, todo.Title, todo.Description, todo.Completed)
     if err != nil {
-        return false
+        return Todo{}, false, err
     }
-    affected, _ := res.RowsAffected()
-    return affected > 0
-}
-
-func CreateTodo(todo Todo) (Todo, bool) {
-    row := db.QueryRow(`INSERT INTO todos (title, description, completed) VALUES ($1, $2, $3) RETURNING id, created_at`,
-        todo.Title, todo.Description, todo.Completed)
-    var t Todo
-    var err error
-    t, err = scanTodoRow(row)
-    if err != nil {
-        return Todo{}, false
-    }
-    // 将返回的字段合并到结果
-    t.Title = todo.Title
-    t.Description = todo.Description
-    t.Completed = todo.Completed
-    return t, true
+    return created, true, nil
 }

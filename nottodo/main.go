@@ -1,11 +1,14 @@
 package main
 
 import (
-    "flag"
+    "bufio"
+    "context"
     "fmt"
     "os"
+    "strings"
 
     "github.com/akagiyui/go-together/common/model"
+    "github.com/akagiyui/go-together/nottodo/config"
     "github.com/akagiyui/go-together/nottodo/middleware"
     "github.com/akagiyui/go-together/nottodo/repo"
     "github.com/akagiyui/go-together/nottodo/service"
@@ -24,79 +27,88 @@ func AuthMiddleware() rest.HandlerFunc {
     }
 }
 
-func runCLI() bool {
-    if len(os.Args) < 2 {
-        return false
+// 在开发模式下启动交互式终端，支持在服务器运行时执行指令
+func runInteractiveShell(mode config.Mode) {
+    if mode != config.ModeDev {
+        return
     }
-    if os.Args[1] != "user" {
-        return false
-    }
-    // 初始化数据库（从环境变量读取 DSN）
-    if err := repo.InitDB(""); err != nil {
-        fmt.Println("初始化数据库失败:", err)
-        os.Exit(1)
-    }
-
-    userCmd := flag.NewFlagSet("user", flag.ExitOnError)
-    if len(os.Args) < 3 {
-        fmt.Println("用法: nottodo user <create|passwd> [选项]")
-        os.Exit(2)
-    }
-    sub := os.Args[2]
-    switch sub {
-    case "create":
-        create := flag.NewFlagSet("create", flag.ExitOnError)
-        username := create.String("u", "", "用户名")
-        nickname := create.String("n", "", "昵称")
-        password := create.String("p", "", "密码")
-        _ = userCmd // 占位，防止未使用
-        _ = create.Parse(os.Args[3:])
-        if *username == "" || *password == "" {
-            fmt.Println("错误: 用户名与密码不能为空")
-            os.Exit(2)
+    go func() {
+        reader := bufio.NewScanner(os.Stdin)
+        fmt.Println("[DEV] 交互式命令已启用。输入 help 查看帮助。")
+        for {
+            fmt.Print("> ")
+            if !reader.Scan() {
+                return
+            }
+            line := strings.TrimSpace(reader.Text())
+            if line == "" {
+                continue
+            }
+            parts := strings.Fields(line)
+            if len(parts) == 0 {
+                continue
+            }
+            switch parts[0] {
+            case "help", "h":
+                fmt.Println("可用命令:")
+                fmt.Println("  user create <username> <nickname> <password>  创建用户")
+                fmt.Println("  user passwd <username> <newpassword>         修改用户密码")
+            case "user":
+                if len(parts) < 2 {
+                    fmt.Println("用法: user <create|passwd> ...")
+                    continue
+                }
+                sub := parts[1]
+                ctx := context.Background()
+                switch sub {
+                case "create":
+                    if len(parts) < 5 {
+                        fmt.Println("用法: user create <username> <nickname> <password>")
+                        continue
+                    }
+                    u, err := repo.CreateUser(ctx, parts[2], parts[3], parts[4])
+                    if err != nil {
+                        fmt.Println("创建失败:", err)
+                        continue
+                    }
+                    fmt.Printf("创建成功: id=%d, username=%s, nickname=%s\n", u.ID, u.Username, u.Nickname)
+                case "passwd":
+                    if len(parts) < 4 {
+                        fmt.Println("用法: user passwd <username> <newpassword>")
+                        continue
+                    }
+                    if err := repo.UpdateUserPasswordByUsername(ctx, parts[2], parts[3]); err != nil {
+                        fmt.Println("修改失败:", err)
+                    } else {
+                        fmt.Println("修改成功")
+                    }
+                default:
+                    fmt.Println("未知子命令:", sub)
+                }
+            default:
+                fmt.Println("未知命令，输入 help 获取帮助")
+            }
         }
-        u, err := repo.CreateUser(*username, *nickname, *password)
-        if err != nil {
-            fmt.Println("创建用户失败:", err)
-            os.Exit(1)
-        }
-        fmt.Printf("创建成功: id=%d, username=%s, nickname=%s\n", u.ID, u.Username, u.Nickname)
-        return true
-    case "passwd":
-        passwd := flag.NewFlagSet("passwd", flag.ExitOnError)
-        username := passwd.String("u", "", "用户名")
-        newpass := passwd.String("p", "", "新密码")
-        _ = passwd.Parse(os.Args[3:])
-        if *username == "" || *newpass == "" {
-            fmt.Println("错误: 用户名与新密码不能为空")
-            os.Exit(2)
-        }
-        if err := repo.UpdateUserPasswordByUsername(*username, *newpass); err != nil {
-            fmt.Println("修改密码失败:", err)
-            os.Exit(1)
-        }
-        fmt.Println("修改密码成功")
-        return true
-    default:
-        fmt.Println("未知子命令:", sub)
-        os.Exit(2)
-    }
-    return false
+    }()
 }
 
 func main() {
-    // CLI 模式
-    if runCLI() {
-        return
-    }
-
-    // 初始化数据库（从环境变量读取 DSN）
-    if err := repo.InitDB(""); err != nil {
+    // 读取配置
+    cfg, err := config.Load()
+    if err != nil {
         panic(err)
     }
 
+    // 初始化数据库
+    if err := repo.InitDB(cfg.DSN); err != nil {
+        panic(err)
+    }
+
+    // 开启交互式终端（仅开发模式）
+    runInteractiveShell(cfg.Mode)
+
     s := rest.NewServer()
-    s.Debug = true
+    s.Debug = cfg.Mode == config.ModeDev
 
     // 设置全局校验错误处理器
     s.SetValidationErrorHandler(func(ctx *rest.Context, err error) {

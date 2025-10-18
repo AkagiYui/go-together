@@ -16,7 +16,7 @@ func (r *DeleteUserRequest) Validate() error {
 }
 
 func (r *DeleteUserRequest) Handle(ctx *rest.Context) {
-    ok, err := repo.DeleteUserByID(r.ID)
+    ok, err := repo.DeleteUserByID(ctx.Request.Context(), r.ID)
     if err != nil {
         ctx.SetResult(model.InternalError())
         return
