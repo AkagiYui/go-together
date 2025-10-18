@@ -140,7 +140,7 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 			ctx.Next()
 
 			// response
-			if !ctx.responseAsStream {
+			if !ctx.disableInternalResponse {
 				ctx.writeHeaders()
 				server.writeResponse(w, ctx.Result, ctx)
 			}
