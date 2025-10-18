@@ -3,3 +3,4 @@ example*
 .vscode/
 __debug*
 *.png
+.env

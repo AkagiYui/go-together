@@ -393,4 +393,3 @@ func validateRegexp(field reflect.Value, param string, fieldName string) error {
 	}
 	return Match(field.String(), param, fieldName)
 }
-
