@@ -1,52 +1,78 @@
 package repo
 
-import (
-	"context"
+import "time"
 
-	todogen "github.com/akagiyui/go-together/nottodo/repo/todo"
-)
-
-// 兼容旧的仓储接口，内部转调 sqlc 生成的查询
-// 注意：这里不再编写任何原生 SQL
-
-type Todo = todogen.Todo
-
-func GetTodos(ctx context.Context) ([]Todo, int, error) {
-	list, err := TodoQueries.ListTodos(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-	return list, len(list), nil
+// Todo 结构体定义
+type Todo struct {
+	ID          int    `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Completed   bool   `json:"completed"`
+	CreatedAt   string `json:"created_at"`
 }
 
-func GetTodoByID(ctx context.Context, id int) (Todo, bool, error) {
-	t, err := TodoQueries.GetTodo(ctx, id)
-	if err != nil {
-		return Todo{}, false, err
+// 内存数据库 - 用于存储Todo项目
+var todos []Todo
+var nextID = 1
+
+func init() {
+	// 初始化一些示例数据
+	todos = []Todo{
+		{
+			ID:          1,
+			Title:       "学习Go语言",
+			Description: "完成Go语言基础教程",
+			Completed:   false,
+			CreatedAt:   "2024-01-01 10:00:00",
+		},
+		{
+			ID:          2,
+			Title:       "学习Gin框架",
+			Description: "掌握Gin框架的基本用法",
+			Completed:   true,
+			CreatedAt:   "2024-01-02 11:00:00",
+		},
 	}
-	return t, true, nil
+	nextID = 3
 }
 
-func UpdateTodo(ctx context.Context, todo Todo) (bool, error) {
-	affected, err := TodoQueries.UpdateTodo(ctx, todo.ID, todo.Title, todo.Description, todo.Completed)
-	if err != nil {
-		return false, err
-	}
-	return affected > 0, nil
+func GetTodos() ([]Todo, int) {
+	return todos, len(todos)
 }
 
-func DeleteTodo(ctx context.Context, id int) (bool, error) {
-	affected, err := TodoQueries.DeleteTodo(ctx, id)
-	if err != nil {
-		return false, err
+func GetTodoByID(id int) (Todo, bool) {
+	for _, todo := range todos {
+		if todo.ID == id {
+			return todo, true
+		}
 	}
-	return affected > 0, nil
+	return Todo{}, false
 }
 
-func CreateTodo(ctx context.Context, todo Todo) (Todo, bool, error) {
-	created, err := TodoQueries.CreateTodo(ctx, todo.Title, todo.Description, todo.Completed)
-	if err != nil {
-		return Todo{}, false, err
+func UpdateTodo(todo Todo) bool {
+	for i, t := range todos {
+		if t.ID == todo.ID {
+			todos[i] = todo
+			return true
+		}
 	}
-	return created, true, nil
+	return false
+}
+
+func DeleteTodo(id int) bool {
+	for i, todo := range todos {
+		if todo.ID == id {
+			todos = append(todos[:i], todos[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+func CreateTodo(todo Todo) bool {
+	todo.ID = nextID
+	todo.CreatedAt = time.Now().Format("2006-01-02 15:04:05")
+	nextID++
+	todos = append(todos, todo)
+	return true
 }

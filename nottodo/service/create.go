@@ -31,11 +31,8 @@ func (r *CreateTodoRequest) Handle(ctx *rest.Context) {
 		Completed:   r.Completed,
 	}
 
-	if created, ok, err := repo.CreateTodo(ctx.Request.Context(), newTodo); err != nil {
-		ctx.SetResult(model.InternalError())
-		return
-	} else if ok {
-		ctx.SetResult(model.Success(created))
+	if repo.CreateTodo(newTodo) {
+		ctx.SetResult(model.Success(newTodo))
 	} else {
 		ctx.SetResult(model.InternalError())
 	}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -10,7 +9,6 @@ import (
 	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/nottodo/config"
 	"github.com/akagiyui/go-together/nottodo/middleware"
-	"github.com/akagiyui/go-together/nottodo/repo"
 	"github.com/akagiyui/go-together/nottodo/service"
 	"github.com/akagiyui/go-together/rest"
 )
@@ -28,6 +26,7 @@ func AuthMiddleware() rest.HandlerFunc {
 }
 
 // 在开发模式下启动交互式终端，支持在服务器运行时执行指令
+// 当前仅提供一个占位命令：noop
 func runInteractiveShell(mode config.Mode) {
 	if mode != config.ModeDev {
 		return
@@ -44,47 +43,12 @@ func runInteractiveShell(mode config.Mode) {
 			if line == "" {
 				continue
 			}
-			parts := strings.Fields(line)
-			if len(parts) == 0 {
-				continue
-			}
-			switch parts[0] {
+			switch line {
 			case "help", "h":
 				fmt.Println("可用命令:")
-				fmt.Println("  user create <username> <nickname> <password>  创建用户")
-				fmt.Println("  user passwd <username> <newpassword>         修改用户密码")
-			case "user":
-				if len(parts) < 2 {
-					fmt.Println("用法: user <create|passwd> ...")
-					continue
-				}
-				sub := parts[1]
-				ctx := context.Background()
-				switch sub {
-				case "create":
-					if len(parts) < 5 {
-						fmt.Println("用法: user create <username> <nickname> <password>")
-						continue
-					}
-					u, err := repo.CreateUser(ctx, parts[2], parts[3], parts[4])
-					if err != nil {
-						fmt.Println("创建失败:", err)
-						continue
-					}
-					fmt.Printf("创建成功: id=%d, username=%s, nickname=%s\n", u.ID, u.Username, u.Nickname)
-				case "passwd":
-					if len(parts) < 4 {
-						fmt.Println("用法: user passwd <username> <newpassword>")
-						continue
-					}
-					if err := repo.UpdateUserPasswordByUsername(ctx, parts[2], parts[3]); err != nil {
-						fmt.Println("修改失败:", err)
-					} else {
-						fmt.Println("修改成功")
-					}
-				default:
-					fmt.Println("未知子命令:", sub)
-				}
+				fmt.Println("  noop               占位命令，输出 ok")
+			case "noop":
+				fmt.Println("ok")
 			default:
 				fmt.Println("未知命令，输入 help 获取帮助")
 			}
@@ -93,14 +57,9 @@ func runInteractiveShell(mode config.Mode) {
 }
 
 func main() {
-	// 读取配置
+	// 读取配置（仅用于环境与模式控制，当前无需数据库）
 	cfg, err := config.Load()
 	if err != nil {
-		panic(err)
-	}
-
-	// 初始化数据库
-	if err := repo.InitDB(cfg.DSN); err != nil {
 		panic(err)
 	}
 
@@ -146,13 +105,6 @@ func main() {
 		todoGroup.Delete("/{id}", &service.DeleteTodoRequest{})
 	}
 
-	// 用户管理：仅增删
-	userGroup := v1.Group("/users")
-	{
-		userGroup.Post("", &service.CreateUserRequest{})
-		userGroup.Delete("/{id}", &service.DeleteUserRequest{})
-	}
-
 	println("🚀 Server starting on http://localhost:8080")
 	println("📚 API Documentation:")
 	println("  GET    /v1/todos        - 获取所有Todo")
@@ -160,8 +112,6 @@ func main() {
 	println("  POST   /v1/todos        - 创建Todo")
 	println("  PUT    /v1/todos/{id}   - 更新指定ID的Todo")
 	println("  DELETE /v1/todos/{id}   - 删除指定ID的Todo")
-	println("  POST   /v1/users        - 创建用户")
-	println("  DELETE /v1/users/{id}   - 删除用户")
 
 	if err := s.Run(":8080"); err != nil {
 		panic(err)

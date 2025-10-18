@@ -9,14 +9,9 @@ import (
 
 type GetTodosRequest struct{}
 
-// 处理获取 Todo 列表请求
 func (r *GetTodosRequest) Handle(ctx *rest.Context) {
 	println("GetTodosRequest")
-	list, total, err := repo.GetTodos(ctx.Request.Context())
-	if err != nil {
-		ctx.SetResult(model.InternalError())
-		return
-	}
+	list, total := repo.GetTodos()
 	ctx.SetResult(model.Success(model.PageData{
 		Total: total,
 		List:  list,
@@ -34,11 +29,7 @@ func (r *GetTodoByIDRequest) Validate() error {
 
 func (r *GetTodoByIDRequest) Handle(ctx *rest.Context) {
 	println("GetTodoByIDRequest")
-	todo, ok, err := repo.GetTodoByID(ctx.Request.Context(), r.ID)
-	if err != nil {
-		ctx.SetResult(model.InternalError())
-		return
-	}
+	todo, ok := repo.GetTodoByID(r.ID)
 	if ok {
 		ctx.SetResult(model.Success(todo))
 		return

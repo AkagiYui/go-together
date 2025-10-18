@@ -2,7 +2,6 @@ package config
 
 import (
 	"bufio"
-	"errors"
 	"os"
 	"strings"
 )
@@ -40,7 +39,7 @@ func ParseMode(s string) Mode {
 }
 
 // Config 应用配置，仅从环境变量读取
-// DSN 为必填，MODE 为可选，默认 prod
+// 目前 DSN 可为空（使用内存数据库），MODE 为可选，默认 prod
 type Config struct {
 	DSN  string
 	Mode Mode
@@ -51,9 +50,6 @@ func Load() (Config, error) {
 	_ = loadDotenv(".env")
 
 	dsn := strings.TrimSpace(os.Getenv("DATABASE_URL"))
-	if dsn == "" {
-		return Config{}, errors.New("必须通过环境变量 DATABASE_URL 提供数据库 DSN")
-	}
 	mode := ParseMode(os.Getenv("MODE"))
 	return Config{DSN: dsn, Mode: mode}, nil
 }

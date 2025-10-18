@@ -30,11 +30,7 @@ func (r *UpdateTodoRequest) Validate() error {
 
 func (r *UpdateTodoRequest) Handle(ctx *rest.Context) {
 	println("UpdateTodoRequest")
-	oriTodo, ok, err := repo.GetTodoByID(ctx.Request.Context(), r.ID)
-	if err != nil {
-		ctx.SetResult(model.InternalError())
-		return
-	}
+	oriTodo, ok := repo.GetTodoByID(r.ID)
 	if !ok {
 		ctx.SetResult(model.Error(model.NOT_FOUND, "Todo not found"))
 		return
@@ -47,10 +43,7 @@ func (r *UpdateTodoRequest) Handle(ctx *rest.Context) {
 		oriTodo.Description = r.Todo.Description
 	}
 
-	if ok, err := repo.UpdateTodo(ctx.Request.Context(), oriTodo); err != nil {
-		ctx.SetResult(model.InternalError())
-		return
-	} else if ok {
+	if repo.UpdateTodo(oriTodo) {
 		ctx.SetResult(model.Success(oriTodo))
 	} else {
 		ctx.SetResult(model.InternalError())
