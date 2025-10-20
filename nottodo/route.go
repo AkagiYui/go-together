@@ -13,7 +13,7 @@ POST   /v1/todos        - 创建Todo
 PUT    /v1/todos/{id}   - 更新指定ID的Todo
 DELETE /v1/todos/{id}   - 删除指定ID的Todo`
 
-func init() {
+func registerRoute() {
 	v1 := s.Group("/v1")
 
 	todoGroup := v1.Group("/todos", middleware.AuthMiddleware())

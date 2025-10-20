@@ -39,4 +39,6 @@ func init() {
 	s.GetFunc("/healthz", func(ctx *rest.Context) {
 		ctx.SetResult(model.Success("OK"))
 	})
+
+	registerRoute()
 }
