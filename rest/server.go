@@ -136,8 +136,26 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 				}
 			}()
 
+			// 优先使用 HandlerNames 中的最后一个名称，如果没有则使用反射获取
+			var lastHandlerName string
+			if len(factory.HandlerNames) > 0 && len(factory.HandlerNames) == len(factory.RunnerChain) {
+				lastHandlerName = factory.HandlerNames[len(factory.HandlerNames)-1]
+			} else {
+				lastHandlerName = runtime.FuncForPC(reflect.ValueOf(factory.RunnerChain[len(factory.RunnerChain)-1]).Pointer()).Name()
+			}
+
+			// log if dev
+			if server.Debug {
+				fmt.Printf("--> [%7s] %s to %s\n", ctx.Method, ctx.Endpoint, lastHandlerName)
+			}
+
 			// dispatch request
 			ctx.Next()
+
+			// log if dev
+			if server.Debug {
+				fmt.Printf("<-- [%7s] %s with %3d from %s\n", ctx.Method, ctx.Endpoint, ctx.statusCode, lastHandlerName)
+			}
 
 			// response
 			if !ctx.disableInternalResponse {
@@ -164,8 +182,18 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 				}
 			}()
 
+			// log if dev
+			if server.Debug {
+				fmt.Printf("--> [%7s] %s to 404\n", ctx.Method, ctx.Endpoint)
+			}
+
 			// dispatch request
 			ctx.Next()
+
+			// log if dev
+			if server.Debug {
+				fmt.Printf("<-- [%7s] %s with %3d from 404\n", ctx.Method, ctx.Endpoint, ctx.statusCode)
+			}
 
 			// response
 			if !ctx.disableInternalResponse {
