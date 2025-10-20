@@ -8,6 +8,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Setting struct {
+	// 键
+	Key string `json:"key"`
+	// 值
+	Value string `json:"value"`
+	// 描述
+	Description pgtype.Text `json:"description"`
+	// 更新时间
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
 type Todo struct {
 	// ID
 	ID int64 `json:"id"`

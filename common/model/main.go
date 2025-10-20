@@ -60,6 +60,7 @@ func InternalError(errors ...error) GeneralResponse {
 		fmt.Printf("err: %v\n", err)
 	}
 
+	// hide error message
 	return Error(INTERNAL_ERROR, "Internal Server Error")
 }
 

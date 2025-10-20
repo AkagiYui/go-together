@@ -38,6 +38,16 @@ func (q *Queries) CreateTodo(ctx context.Context, arg CreateTodoParams) error {
 	return err
 }
 
+const deleteSetting = `-- name: DeleteSetting :exec
+DELETE FROM settings
+WHERE key = $1
+`
+
+func (q *Queries) DeleteSetting(ctx context.Context, key string) error {
+	_, err := q.db.Exec(ctx, deleteSetting, key)
+	return err
+}
+
 const deleteTodo = `-- name: DeleteTodo :exec
 DELETE FROM todos
 WHERE id = $1
@@ -46,6 +56,25 @@ WHERE id = $1
 func (q *Queries) DeleteTodo(ctx context.Context, id int64) error {
 	_, err := q.db.Exec(ctx, deleteTodo, id)
 	return err
+}
+
+const getSetting = `-- name: GetSetting :one
+
+SELECT key, value, description, updated_at FROM settings
+WHERE key = $1
+`
+
+// ===============================
+func (q *Queries) GetSetting(ctx context.Context, key string) (Setting, error) {
+	row := q.db.QueryRow(ctx, getSetting, key)
+	var i Setting
+	err := row.Scan(
+		&i.Key,
+		&i.Value,
+		&i.Description,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const getTodo = `-- name: GetTodo :one
@@ -64,6 +93,35 @@ func (q *Queries) GetTodo(ctx context.Context, id int64) (Todo, error) {
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const listSettings = `-- name: ListSettings :many
+SELECT key, value, description, updated_at FROM settings
+`
+
+func (q *Queries) ListSettings(ctx context.Context) ([]Setting, error) {
+	rows, err := q.db.Query(ctx, listSettings)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Setting
+	for rows.Next() {
+		var i Setting
+		if err := rows.Scan(
+			&i.Key,
+			&i.Value,
+			&i.Description,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listTodos = `-- name: ListTodos :many
@@ -95,4 +153,29 @@ func (q *Queries) ListTodos(ctx context.Context) ([]Todo, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const setSetting = `-- name: SetSetting :one
+INSERT INTO settings (key, value)
+VALUES ($1, $2)
+ON CONFLICT (key) DO UPDATE
+SET value = EXCLUDED.value, updated_at = NOW()
+RETURNING key, value, description, updated_at
+`
+
+type SetSettingParams struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+func (q *Queries) SetSetting(ctx context.Context, arg SetSettingParams) (Setting, error) {
+	row := q.db.QueryRow(ctx, setSetting, arg.Key, arg.Value)
+	var i Setting
+	err := row.Scan(
+		&i.Key,
+		&i.Value,
+		&i.Description,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

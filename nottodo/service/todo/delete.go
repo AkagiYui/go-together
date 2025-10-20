@@ -1,4 +1,4 @@
-package service
+package todo
 
 import (
 	"github.com/akagiyui/go-together/common/model"

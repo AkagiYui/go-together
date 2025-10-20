@@ -1,4 +1,4 @@
-package service
+package todo
 
 import (
 	"errors"
@@ -31,9 +31,9 @@ func (r *CreateTodoRequest) Handle(ctx *rest.Context) {
 		Completed:   r.Completed,
 	}
 
-	if err := repo.CreateTodo(newTodo); err == nil {
-		ctx.SetResult(model.Success(newTodo))
-	} else {
+	if err := repo.CreateTodo(newTodo); err != nil {
 		ctx.SetResult(model.InternalError(err))
+		return
 	}
+	ctx.SetResult(model.Success(newTodo))
 }
