@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"runtime"
 	"strconv"
+	"time"
 )
 
 type Server struct {
@@ -148,13 +149,15 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 			if server.Debug {
 				fmt.Printf("--> [%7s] %s to %s\n", ctx.Method, ctx.Endpoint, lastHandlerName)
 			}
+			startTime := time.Now()
 
 			// dispatch request
 			ctx.Next()
 
 			// log if dev
 			if server.Debug {
-				fmt.Printf("<-- [%7s] %s with %3d from %s\n", ctx.Method, ctx.Endpoint, ctx.statusCode, lastHandlerName)
+				consumeMs := time.Since(startTime).Milliseconds()
+				fmt.Printf("<-- [%7s|%3d|%3dms] %s from %s\n", ctx.Method, ctx.statusCode, consumeMs, ctx.Endpoint, lastHandlerName)
 			}
 
 			// response
