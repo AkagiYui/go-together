@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS todos (
+	id BIGSERIAL PRIMARY KEY,
+	title VARCHAR(255) NOT NULL,
+	description VARCHAR(255),
+	completed BOOL NOT NULL,
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMENT ON COLUMN todos.id IS 'ID';
+COMMENT ON COLUMN todos.title IS '标题';
+COMMENT ON COLUMN todos.description IS '描述';
+COMMENT ON COLUMN todos.completed IS '是否完成';
+COMMENT ON COLUMN todos.created_at IS '创建时间';

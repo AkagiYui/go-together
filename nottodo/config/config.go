@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"os"
 	"strings"
+
+	"github.com/akagiyui/go-together/common/validation"
 )
 
 // Mode 应用运行模式的枚举
@@ -13,11 +15,11 @@ import (
 // 使用方式：
 //
 //	if cfg.Mode == ModeDev { ... }
-type Mode int
+type Mode string
 
 const (
-	ModeProd Mode = iota
-	ModeDev
+	ModeProd Mode = "prod"
+	ModeDev  Mode = "dev"
 )
 
 func (m Mode) String() string {
@@ -41,8 +43,8 @@ func ParseMode(s string) Mode {
 // Config 应用配置，仅从环境变量读取
 // 目前 DSN 可为空（使用内存数据库），MODE 为可选，默认 prod
 type Config struct {
-	DSN  string
-	Mode Mode
+	DSN  string `validate:"required"`
+	Mode Mode   `validate:"oneof=prod dev"`
 }
 
 // Load 尝试先加载 .env 文件，再从环境变量读取配置
@@ -51,7 +53,8 @@ func Load() (Config, error) {
 
 	dsn := strings.TrimSpace(os.Getenv("DATABASE_URL"))
 	mode := ParseMode(os.Getenv("MODE"))
-	return Config{DSN: dsn, Mode: mode}, nil
+	cfg := Config{DSN: dsn, Mode: mode}
+	return cfg, validation.ValidateStruct(cfg)
 }
 
 // 轻量级 .env 加载器：仅支持 KEY=VALUE 形式，# 开头为注释

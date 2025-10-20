@@ -76,6 +76,14 @@ func Positive(value int, fieldName string) error {
 	return nil
 }
 
+// PositiveInt64 校验数值必须为正数（大于0）
+func PositiveInt64(value int64, fieldName string) error {
+	if value <= 0 {
+		return fmt.Errorf("%s必须大于0", fieldName)
+	}
+	return nil
+}
+
 // NonNegative 校验数值必须为非负数（大于等于0）
 func NonNegative(value int, fieldName string) error {
 	if value < 0 {

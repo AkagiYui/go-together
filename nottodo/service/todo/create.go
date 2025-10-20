@@ -5,7 +5,7 @@ import (
 
 	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/common/validation"
-	repo "github.com/akagiyui/go-together/nottodo/repo/todo"
+	"github.com/akagiyui/go-together/nottodo/repo"
 	"github.com/akagiyui/go-together/rest"
 )
 
@@ -18,22 +18,22 @@ func (r *CreateTodoRequest) Validate() error {
 	return errors.Join(
 		validation.Required(r.Title, "标题"),
 		validation.MaxLength(r.Title, 100, "标题"),
-		validation.MaxLength(r.Description, 500, "描述"),
+		validation.MaxLength(r.Description.String, 500, "描述"),
 	)
 }
 
 func (r *CreateTodoRequest) Handle(ctx *rest.Context) {
 	println("CreateTodoRequest")
-	// 数据已通过校验，直接创建 Todo
+
 	newTodo := repo.Todo{
 		Title:       r.Title,
 		Description: r.Description,
 		Completed:   r.Completed,
 	}
 
-	if repo.CreateTodo(newTodo) {
+	if err := repo.CreateTodo(newTodo); err == nil {
 		ctx.SetResult(model.Success(newTodo))
 	} else {
-		ctx.SetResult(model.InternalError())
+		ctx.SetResult(model.InternalError(err))
 	}
 }

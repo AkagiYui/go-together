@@ -1,6 +1,10 @@
 package model
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+	"reflect"
+)
 
 type BusinessCode int
 
@@ -50,11 +54,30 @@ func Error(code BusinessCode, message string) GeneralResponse {
 	}
 }
 
-func InternalError() GeneralResponse {
+func InternalError(errors ...error) GeneralResponse {
+	for err := range errors {
+		// print
+		fmt.Printf("err: %v\n", err)
+	}
+
 	return Error(INTERNAL_ERROR, "Internal Server Error")
 }
 
 type PageData struct {
-	Total int `json:"total"`
-	List  any `json:"list"`
+	Total int64 `json:"total"`
+	List  any   `json:"list"`
+}
+
+func Page(total int64, list any) PageData {
+	if IsNil(list) && total == 0 {
+		list = []any{}
+	}
+	return PageData{
+		Total: total,
+		List:  list,
+	}
+}
+
+func IsNil(v any) bool {
+	return reflect.ValueOf(v).IsNil()
 }

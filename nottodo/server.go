@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/nottodo/config"
 	"github.com/akagiyui/go-together/nottodo/middleware"
@@ -23,6 +25,10 @@ func init() {
 		ctx.Next()
 		if obj, ok := ctx.Result.(model.GeneralResponse); ok {
 			ctx.Status(model.HttpStatus(obj.Code))
+
+			if obj.Code != model.SUCCESS {
+				fmt.Printf("500: %s\n", obj.Message)
+			}
 		}
 	})
 
