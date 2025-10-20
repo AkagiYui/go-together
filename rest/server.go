@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -144,21 +145,15 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 			} else {
 				lastHandlerName = runtime.FuncForPC(reflect.ValueOf(factory.RunnerChain[len(factory.RunnerChain)-1]).Pointer()).Name()
 			}
-
-			// log if dev
-			if server.Debug {
-				fmt.Printf("--> [%7s] %s to %s\n", ctx.Method, ctx.Endpoint, lastHandlerName)
+			// 倒查字符串，如果先找到.，就取出.后面的字符串，如果先找到/就取出/后面的字符串
+			if pos := strings.LastIndex(lastHandlerName, "."); pos != -1 {
+				lastHandlerName = lastHandlerName[pos+1:]
+			} else if pos := strings.LastIndex(lastHandlerName, "/"); pos != -1 {
+				lastHandlerName = lastHandlerName[pos+1:]
 			}
-			startTime := time.Now()
 
 			// dispatch request
-			ctx.Next()
-
-			// log if dev
-			if server.Debug {
-				consumeMs := time.Since(startTime).Milliseconds()
-				fmt.Printf("<-- [%7s|%3d|%3dms] %s from %s\n", ctx.Method, ctx.statusCode, consumeMs, ctx.Endpoint, lastHandlerName)
-			}
+			contextGoWithLog(ctx, server, lastHandlerName)
 
 			// response
 			if !ctx.disableInternalResponse {
@@ -185,18 +180,8 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 				}
 			}()
 
-			// log if dev
-			if server.Debug {
-				fmt.Printf("--> [%7s] %s to 404\n", ctx.Method, ctx.Endpoint)
-			}
-
 			// dispatch request
-			ctx.Next()
-
-			// log if dev
-			if server.Debug {
-				fmt.Printf("<-- [%7s] %s with %3d from 404\n", ctx.Method, ctx.Endpoint, ctx.statusCode)
-			}
+			contextGoWithLog(ctx, server, "404")
 
 			// response
 			if !ctx.disableInternalResponse {
@@ -258,4 +243,21 @@ func (s *Server) SetNotFound(handlers ...HandlerInterface) error {
 	s.notFoundHandlers = runners
 	s.notFoundNames = names
 	return nil
+}
+
+func contextGoWithLog(ctx *Context, server *Server, lastHandlerName string) {
+	// log if dev
+	if server.Debug {
+		fmt.Printf("%s --> [%7s] %s to %s\n", ctx.RemoteAddr, ctx.Method, ctx.Endpoint, lastHandlerName)
+	}
+	startTime := time.Now()
+
+	// dispatch request
+	ctx.Next()
+
+	// log if dev
+	if server.Debug {
+		consumeMs := time.Since(startTime).Milliseconds()
+		fmt.Printf("%s <-- [%7s|%3d|%3dms] %s from %s\n", ctx.RemoteAddr, ctx.Method, ctx.statusCode, consumeMs, ctx.Endpoint, lastHandlerName)
+	}
 }
