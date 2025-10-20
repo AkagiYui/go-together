@@ -51,7 +51,7 @@ type Config struct {
 func Load() (Config, error) {
 	_ = loadDotenv(".env")
 
-	dsn := strings.TrimSpace(os.Getenv("DATABASE_URL"))
+	dsn := strings.TrimSpace(os.Getenv("DSN"))
 	mode := ParseMode(os.Getenv("MODE"))
 	cfg := Config{DSN: dsn, Mode: mode}
 	return cfg, validation.ValidateStruct(cfg)
