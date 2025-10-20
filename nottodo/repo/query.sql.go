@@ -38,6 +38,17 @@ func (q *Queries) CreateTodo(ctx context.Context, arg CreateTodoParams) error {
 	return err
 }
 
+const deleteCache = `-- name: DeleteCache :exec
+DELETE FROM app_cache
+WHERE key = $1
+`
+
+// 删除一个缓存项
+func (q *Queries) DeleteCache(ctx context.Context, key string) error {
+	_, err := q.db.Exec(ctx, deleteCache, key)
+	return err
+}
+
 const deleteSetting = `-- name: DeleteSetting :exec
 DELETE FROM settings
 WHERE key = $1
@@ -56,6 +67,26 @@ WHERE id = $1
 func (q *Queries) DeleteTodo(ctx context.Context, id int64) error {
 	_, err := q.db.Exec(ctx, deleteTodo, id)
 	return err
+}
+
+const getCache = `-- name: GetCache :one
+
+SELECT value, expires_at FROM app_cache
+WHERE key = $1
+`
+
+type GetCacheRow struct {
+	Value     []byte             `json:"value"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+}
+
+// ===============================
+// 获取一个缓存项，同时返回它的值和过期时间
+func (q *Queries) GetCache(ctx context.Context, key string) (GetCacheRow, error) {
+	row := q.db.QueryRow(ctx, getCache, key)
+	var i GetCacheRow
+	err := row.Scan(&i.Value, &i.ExpiresAt)
+	return i, err
 }
 
 const getSetting = `-- name: GetSetting :one
@@ -153,6 +184,37 @@ func (q *Queries) ListTodos(ctx context.Context) ([]Todo, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const purgeExpiredCache = `-- name: PurgeExpiredCache :exec
+DELETE FROM app_cache
+WHERE expires_at < NOW()
+`
+
+// 清理所有已经过期的缓存项
+func (q *Queries) PurgeExpiredCache(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, purgeExpiredCache)
+	return err
+}
+
+const setCache = `-- name: SetCache :exec
+INSERT INTO app_cache (key, value, expires_at)
+VALUES ($1, $2, $3)
+ON CONFLICT (key) DO UPDATE
+SET value = EXCLUDED.value,
+    expires_at = EXCLUDED.expires_at
+`
+
+type SetCacheParams struct {
+	Key       string             `json:"key"`
+	Value     []byte             `json:"value"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+}
+
+// 使用 UPSERT (INSERT ... ON CONFLICT) 来设置缓存，这是原子操作
+func (q *Queries) SetCache(ctx context.Context, arg SetCacheParams) error {
+	_, err := q.db.Exec(ctx, setCache, arg.Key, arg.Value, arg.ExpiresAt)
+	return err
 }
 
 const setSetting = `-- name: SetSetting :one

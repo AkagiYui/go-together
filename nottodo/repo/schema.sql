@@ -23,3 +23,26 @@ COMMENT ON COLUMN settings.key IS '键';
 COMMENT ON COLUMN settings.value IS '值';
 COMMENT ON COLUMN settings.description IS '描述';
 COMMENT ON COLUMN settings.updated_at IS '更新时间';
+
+-- 使用 UNLOGGED 关键字创建表
+CREATE UNLOGGED TABLE app_cache (
+    -- 缓存键，用于快速查找
+    key VARCHAR(255) PRIMARY KEY,
+
+    -- 缓存的值，使用 jsonb 类型。
+    -- jsonb 是二进制格式，比 text 存储 json 效率更高，且支持索引和内部操作。
+    value JSONB NOT NULL,
+
+    -- 过期时间，TIMESTAMPTZ 存储带时区的时间，是最佳实践
+    expires_at TIMESTAMPTZ NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 为过期时间创建一个索引，方便我们快速清理过期的缓存
+CREATE INDEX idx_app_cache_expires_at ON app_cache (expires_at);
+
+COMMENT ON COLUMN app_cache.key IS '键';
+COMMENT ON COLUMN app_cache.value IS '值';
+COMMENT ON COLUMN app_cache.expires_at IS '过期时间';
+COMMENT ON COLUMN app_cache.created_at IS '创建时间';

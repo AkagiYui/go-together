@@ -8,6 +8,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AppCache struct {
+	// 键
+	Key string `json:"key"`
+	// 值
+	Value []byte `json:"value"`
+	// 过期时间
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+	// 创建时间
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
 type Setting struct {
 	// 键
 	Key string `json:"key"`
