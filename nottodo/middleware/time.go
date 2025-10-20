@@ -11,9 +11,7 @@ func TimeConsumeMiddleware() rest.HandlerFunc {
 	return func(ctx *rest.Context) {
 		beforeTime := time.Now()
 		ctx.Next()
-		afterTime := time.Now()
-		consumeMs := afterTime.Sub(beforeTime).Milliseconds()
-		fmt.Printf("consume: %dms\n", consumeMs)
+		consumeMs := time.Since(beforeTime).Milliseconds()
 		ctx.Response.Header("X-Time-Consume", fmt.Sprintf("%dms", consumeMs))
 	}
 }

@@ -12,7 +12,6 @@ import (
 type GetTodosRequest struct{}
 
 func (r *GetTodosRequest) Handle(ctx *rest.Context) {
-	println("GetTodosRequest")
 	list, total, err := repo.GetTodos()
 	fmt.Printf("list: %v\n", list)
 	if err != nil {
@@ -32,7 +31,6 @@ func (r *GetTodoByIDRequest) Validate() error {
 }
 
 func (r *GetTodoByIDRequest) Handle(ctx *rest.Context) {
-	println("GetTodoByIDRequest")
 	todo, err := repo.GetTodoByID(r.ID)
 	if err != nil {
 		ctx.SetResult(model.Error(model.NOT_FOUND, "Todo not found"))

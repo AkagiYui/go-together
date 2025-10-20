@@ -29,7 +29,6 @@ func (r *UpdateTodoRequest) Validate() error {
 }
 
 func (r *UpdateTodoRequest) Handle(ctx *rest.Context) {
-	println("UpdateTodoRequest")
 	oriTodo, err := repo.GetTodoByID(r.ID)
 	if err != nil {
 		ctx.SetResult(model.Error(model.NOT_FOUND, "Todo not found"))

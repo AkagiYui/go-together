@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/nottodo/config"
@@ -26,7 +27,7 @@ func init() {
 		if obj, ok := ctx.Result.(model.GeneralResponse); ok {
 			ctx.Status(model.HttpStatus(obj.Code))
 
-			if obj.Code != model.SUCCESS {
+			if !slices.Contains([]model.BusinessCode{model.SUCCESS, model.INTERNAL_ERROR}, obj.Code) {
 				fmt.Printf("500: %s\n", obj.Message)
 			}
 		}

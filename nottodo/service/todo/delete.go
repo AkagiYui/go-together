@@ -17,7 +17,6 @@ func (r *DeleteTodoRequest) Validate() error {
 }
 
 func (r *DeleteTodoRequest) Handle(ctx *rest.Context) {
-	println("DeleteTodoRequest")
 	if err := repo.DeleteTodo(int64(r.ID)); err != nil {
 		ctx.SetResult(model.Error(model.NOT_FOUND, "Todo not found"))
 		return

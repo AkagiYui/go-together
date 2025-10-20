@@ -16,7 +16,6 @@ const IsAllowRegistrationCacheKey = "is_allow_registration"
 type GetIsAllowRegistration struct{}
 
 func (r *GetIsAllowRegistration) Handle(ctx *rest.Context) {
-	println("GetIsAllowRegistration")
 	allowed, err := repo.GetIsAllowRegistration()
 	if err != nil {
 		ctx.SetResult(model.InternalError(err))
@@ -35,8 +34,6 @@ type SetIsAllowRegistration struct {
 }
 
 func (r *SetIsAllowRegistration) Handle(ctx *rest.Context) {
-	println("SetIsAllowRegistration")
-
 	if err := repo.SetIsAllowRegistration(r.Allowed); err != nil {
 		ctx.SetResult(model.InternalError(err))
 		return

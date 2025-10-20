@@ -23,8 +23,6 @@ func (r *CreateTodoRequest) Validate() error {
 }
 
 func (r *CreateTodoRequest) Handle(ctx *rest.Context) {
-	println("CreateTodoRequest")
-
 	newTodo := repo.Todo{
 		Title:       r.Title,
 		Description: r.Description,
