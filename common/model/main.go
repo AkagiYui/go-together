@@ -55,9 +55,8 @@ func Error(code BusinessCode, message string) GeneralResponse {
 }
 
 func InternalError(errors ...error) GeneralResponse {
-	for err := range errors {
-		// print
-		fmt.Printf("err: %v\n", err)
+	for _, err := range errors {
+		fmt.Printf("err: %v\n", err) // print
 	}
 
 	// hide error message
