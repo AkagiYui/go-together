@@ -14,7 +14,6 @@ type UpdateTodoRequest struct {
 	repo.Todo
 }
 
-// Validate 实现 Validator 接口，校验更新 Todo 的请求参数
 func (r *UpdateTodoRequest) Validate() error {
 	errs := make([]error, 0)
 	errs = append(errs, validation.PositiveInt64(r.ID, "ID"))

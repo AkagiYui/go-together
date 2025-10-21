@@ -41,16 +41,12 @@ func DeleteTodo(id int64) error {
 	return nil
 }
 
-func CreateTodo(todo Todo) error {
+func CreateTodo(todo Todo) (Todo, error) {
 	todo.CreatedAt.Time = time.Now()
 	todo.CreatedAt.Valid = true
-	err := Db.CreateTodo(Ctx, CreateTodoParams{
+	return Db.CreateTodo(Ctx, CreateTodoParams{
 		Title:       todo.Title,
 		Description: todo.Description,
 		Completed:   todo.Completed,
 	})
-	if err != nil {
-		return err
-	}
-	return nil
 }

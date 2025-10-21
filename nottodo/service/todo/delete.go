@@ -11,7 +11,6 @@ type DeleteTodoRequest struct {
 	ID int64 `path:"id"`
 }
 
-// Validate 实现 Validator 接口，校验删除 Todo 的请求参数
 func (r *DeleteTodoRequest) Validate() error {
 	return validation.PositiveInt64(r.ID, "ID")
 }

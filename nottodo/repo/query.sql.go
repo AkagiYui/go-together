@@ -22,9 +22,10 @@ func (q *Queries) CountTodos(ctx context.Context) (int64, error) {
 	return count, err
 }
 
-const createTodo = `-- name: CreateTodo :exec
+const createTodo = `-- name: CreateTodo :one
 INSERT INTO todos (title, description, completed)
 VALUES ($1, $2, $3)
+RETURNING id, title, description, completed, created_at
 `
 
 type CreateTodoParams struct {
@@ -33,9 +34,17 @@ type CreateTodoParams struct {
 	Completed   bool        `json:"completed"`
 }
 
-func (q *Queries) CreateTodo(ctx context.Context, arg CreateTodoParams) error {
-	_, err := q.db.Exec(ctx, createTodo, arg.Title, arg.Description, arg.Completed)
-	return err
+func (q *Queries) CreateTodo(ctx context.Context, arg CreateTodoParams) (Todo, error) {
+	row := q.db.QueryRow(ctx, createTodo, arg.Title, arg.Description, arg.Completed)
+	var i Todo
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Description,
+		&i.Completed,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const deleteCache = `-- name: DeleteCache :exec
@@ -80,7 +89,7 @@ type GetCacheRow struct {
 	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
 }
 
-// ===============================
+// 缓存 ===============================
 // 获取一个缓存项，同时返回它的值和过期时间
 func (q *Queries) GetCache(ctx context.Context, key string) (GetCacheRow, error) {
 	row := q.db.QueryRow(ctx, getCache, key)
@@ -95,7 +104,7 @@ SELECT key, value, description, updated_at FROM settings
 WHERE key = $1
 `
 
-// ===============================
+// 系统设置 ===============================
 func (q *Queries) GetSetting(ctx context.Context, key string) (Setting, error) {
 	row := q.db.QueryRow(ctx, getSetting, key)
 	var i Setting
@@ -156,10 +165,12 @@ func (q *Queries) ListSettings(ctx context.Context) ([]Setting, error) {
 }
 
 const listTodos = `-- name: ListTodos :many
+
 SELECT id, title, description, completed, created_at FROM todos
 ORDER BY id
 `
 
+// 待办事项 ===============================
 func (q *Queries) ListTodos(ctx context.Context) ([]Todo, error) {
 	rows, err := q.db.Query(ctx, listTodos)
 	if err != nil {

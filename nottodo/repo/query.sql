@@ -1,49 +1,4 @@
--- name: ListTodos :many
-SELECT * FROM todos
-ORDER BY id;
-
--- name: CountTodos :one
-SELECT COUNT(*) FROM todos;
-
--- name: GetTodo :one
-SELECT * FROM todos
-WHERE id = $1;
-
--- name: DeleteTodo :exec
-DELETE FROM todos
-WHERE id = $1;
-
--- name: CreateTodo :exec
-INSERT INTO todos (title, description, completed)
-VALUES ($1, $2, $3);
-
--- name: UpdateTodo :exec
-UPDATE todos
-SET title = $2, description = $3, completed = $4
-WHERE id = $1;
-
--- ===============================
-
--- name: GetSetting :one
-SELECT * FROM settings
-WHERE key = $1;
-
--- name: ListSettings :many
-SELECT * FROM settings;
-
--- name: SetSetting :one
-INSERT INTO settings (key, value)
-VALUES ($1, $2)
-ON CONFLICT (key) DO UPDATE
-SET value = EXCLUDED.value, updated_at = NOW()
-RETURNING *;
-
--- name: DeleteSetting :exec
-DELETE FROM settings
-WHERE key = $1;
-
-
--- ===============================
+-- 缓存 ===============================
 
 -- name: GetCache :one
 -- 获取一个缓存项，同时返回它的值和过期时间
@@ -67,3 +22,52 @@ WHERE key = $1;
 -- 清理所有已经过期的缓存项
 DELETE FROM app_cache
 WHERE expires_at < NOW();
+
+
+-- 系统设置 ===============================
+
+-- name: GetSetting :one
+SELECT * FROM settings
+WHERE key = $1;
+
+-- name: ListSettings :many
+SELECT * FROM settings;
+
+-- name: SetSetting :one
+INSERT INTO settings (key, value)
+VALUES ($1, $2)
+ON CONFLICT (key) DO UPDATE
+SET value = EXCLUDED.value, updated_at = NOW()
+RETURNING *;
+
+-- name: DeleteSetting :exec
+DELETE FROM settings
+WHERE key = $1;
+
+
+-- 待办事项 ===============================
+
+-- name: ListTodos :many
+SELECT * FROM todos
+ORDER BY id;
+
+-- name: CountTodos :one
+SELECT COUNT(*) FROM todos;
+
+-- name: GetTodo :one
+SELECT * FROM todos
+WHERE id = $1;
+
+-- name: DeleteTodo :exec
+DELETE FROM todos
+WHERE id = $1;
+
+-- name: CreateTodo :one
+INSERT INTO todos (title, description, completed)
+VALUES ($1, $2, $3)
+RETURNING *;
+
+-- name: UpdateTodo :exec
+UPDATE todos
+SET title = $2, description = $3, completed = $4
+WHERE id = $1;

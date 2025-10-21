@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+// 缓存
 type AppCache struct {
 	// 键
 	Key string `json:"key"`
@@ -19,6 +20,7 @@ type AppCache struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
+// 系统设置
 type Setting struct {
 	// 键
 	Key string `json:"key"`
@@ -30,6 +32,7 @@ type Setting struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
+// 待办事项
 type Todo struct {
 	// ID
 	ID int64 `json:"id"`
