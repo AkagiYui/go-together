@@ -6,9 +6,10 @@ import (
     "os"
     "strings"
 
+    "github.com/akagiyui/go-together/common/model"
     "github.com/akagiyui/go-together/nottodo/config"
-    "github.com/akagiyui/go-together/nottodo/repo"
     usersvc "github.com/akagiyui/go-together/nottodo/service/user"
+    "github.com/akagiyui/go-together/rest"
 )
 
 // 在开发模式下启动交互式终端，支持在服务器运行时执行指令
@@ -45,17 +46,27 @@ func runInteractiveShell(mode config.Mode) {
                 }
                 username := parts[1]
                 password := parts[2]
-                hashed, err := usersvc.HashPassword(password)
-                if err != nil {
-                    fmt.Println("错误: 密码哈希失败 -", err)
+
+                req := usersvc.CreateUserRequest{Username: username, Password: password}
+                if err := req.Validate(); err != nil {
+                    fmt.Println("错误: ", err)
                     continue
                 }
-                newUser, err := repo.CreateUser(repo.User{Username: username, Password: hashed})
-                if err != nil {
-                    fmt.Println("错误: 创建用户失败 -", err)
-                    continue
+                ctx := rest.NewEmptyContext()
+                req.Handle(&ctx)
+                if resp, ok := ctx.Result.(model.GeneralResponse); ok {
+                    if resp.Code != model.SUCCESS {
+                        fmt.Println("错误: ", resp.Message)
+                        continue
+                    }
+                    if u, ok := resp.Data.(usersvc.UserResponse); ok {
+                        fmt.Printf("ok, 用户已创建，ID=%d, 用户名=%s\n", u.ID, username)
+                    } else {
+                        fmt.Println("ok")
+                    }
+                } else {
+                    fmt.Println("ok")
                 }
-                fmt.Printf("ok, 用户已创建，ID=%d, 用户名=%s\n", newUser.ID, newUser.Username)
             default:
                 fmt.Println(help)
             }
