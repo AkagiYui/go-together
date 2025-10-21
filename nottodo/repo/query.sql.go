@@ -241,3 +241,26 @@ func (q *Queries) SetSetting(ctx context.Context, arg SetSettingParams) (Setting
 	)
 	return i, err
 }
+
+const updateTodo = `-- name: UpdateTodo :exec
+UPDATE todos
+SET title = $2, description = $3, completed = $4
+WHERE id = $1
+`
+
+type UpdateTodoParams struct {
+	ID          int64       `json:"id"`
+	Title       string      `json:"title"`
+	Description pgtype.Text `json:"description"`
+	Completed   bool        `json:"completed"`
+}
+
+func (q *Queries) UpdateTodo(ctx context.Context, arg UpdateTodoParams) error {
+	_, err := q.db.Exec(ctx, updateTodo,
+		arg.ID,
+		arg.Title,
+		arg.Description,
+		arg.Completed,
+	)
+	return err
+}

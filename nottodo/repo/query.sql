@@ -17,6 +17,10 @@ WHERE id = $1;
 INSERT INTO todos (title, description, completed)
 VALUES ($1, $2, $3);
 
+-- name: UpdateTodo :exec
+UPDATE todos
+SET title = $2, description = $3, completed = $4
+WHERE id = $1;
 
 -- ===============================
 
