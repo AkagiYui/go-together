@@ -9,6 +9,8 @@ import (
 	"github.com/akagiyui/go-together/rest"
 )
 
+// GetTodosRequest 获取所有待办事项
+// 返回所有待办事项的列表
 type GetTodosRequest struct{}
 
 func (r *GetTodosRequest) Handle(ctx *rest.Context) {
@@ -21,11 +23,12 @@ func (r *GetTodosRequest) Handle(ctx *rest.Context) {
 	ctx.SetResult(model.Success(model.Page(total, list)))
 }
 
+// GetTodoByIDRequest 获取指定ID的待办事项
+// 根据待办事项的 ID 获取其详细信息
 type GetTodoByIDRequest struct {
 	ID int64 `path:"id"`
 }
 
-// Validate 实现 Validator 接口，校验获取单个 Todo 的请求参数
 func (r *GetTodoByIDRequest) Validate() error {
 	return validation.PositiveInt64(r.ID, "ID")
 }

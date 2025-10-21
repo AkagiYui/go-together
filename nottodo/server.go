@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"slices"
 
 	"github.com/akagiyui/go-together/common/model"
@@ -29,6 +30,10 @@ func init() {
 
 			if !slices.Contains([]model.BusinessCode{model.SUCCESS, model.INTERNAL_ERROR}, obj.Code) {
 				fmt.Printf("500: %s\n", obj.Message)
+			}
+		} else {
+			if ctx.StatusCode == http.StatusBadRequest {
+				ctx.SetResult(model.Error(model.INPUT_ERROR, "Invalid request"))
 			}
 		}
 	})

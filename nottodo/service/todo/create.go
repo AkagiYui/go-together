@@ -9,11 +9,12 @@ import (
 	"github.com/akagiyui/go-together/rest"
 )
 
+// CreateTodoRequest 创建待办事项
+// 创建一个新的待办事项，需要提供标题和可选的描述
 type CreateTodoRequest struct {
 	repo.Todo
 }
 
-// Validate 实现 Validator 接口，校验创建 Todo 的请求参数
 func (r *CreateTodoRequest) Validate() error {
 	return errors.Join(
 		validation.Required(r.Title, "标题"),

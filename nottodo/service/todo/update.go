@@ -9,6 +9,8 @@ import (
 	"github.com/akagiyui/go-together/rest"
 )
 
+// UpdateTodoRequest 更新待办事项
+// 根据 ID 更新待办事项的信息，支持部分更新
 type UpdateTodoRequest struct {
 	ID int64 `path:"id"`
 	repo.Todo

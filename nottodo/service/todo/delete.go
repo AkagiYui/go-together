@@ -7,6 +7,8 @@ import (
 	"github.com/akagiyui/go-together/rest"
 )
 
+// DeleteTodoRequest 删除待办事项
+// 根据 ID 删除指定的待办事项
 type DeleteTodoRequest struct {
 	ID int64 `path:"id"`
 }

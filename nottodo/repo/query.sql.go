@@ -22,6 +22,17 @@ func (q *Queries) CountTodos(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countUsers = `-- name: CountUsers :one
+SELECT COUNT(*) FROM users
+`
+
+func (q *Queries) CountUsers(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countUsers)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createTodo = `-- name: CreateTodo :one
 INSERT INTO todos (title, description, completed)
 VALUES ($1, $2, $3)
@@ -42,6 +53,34 @@ func (q *Queries) CreateTodo(ctx context.Context, arg CreateTodoParams) (Todo, e
 		&i.Title,
 		&i.Description,
 		&i.Completed,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (username, password, nickname)
+VALUES ($1, $2, $3)
+RETURNING id, username, password, nickname, register_at, is_validated, validated_at, created_at
+`
+
+type CreateUserParams struct {
+	Username string      `json:"username"`
+	Password string      `json:"password"`
+	Nickname pgtype.Text `json:"nickname"`
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createUser, arg.Username, arg.Password, arg.Nickname)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Password,
+		&i.Nickname,
+		&i.RegisterAt,
+		&i.IsValidated,
+		&i.ValidatedAt,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -135,6 +174,50 @@ func (q *Queries) GetTodo(ctx context.Context, id int64) (Todo, error) {
 	return i, err
 }
 
+const getUser = `-- name: GetUser :one
+
+SELECT id, username, password, nickname, register_at, is_validated, validated_at, created_at FROM users
+WHERE id = $1
+`
+
+// 用户 ===============================
+func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
+	row := q.db.QueryRow(ctx, getUser, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Password,
+		&i.Nickname,
+		&i.RegisterAt,
+		&i.IsValidated,
+		&i.ValidatedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getUserByUsername = `-- name: GetUserByUsername :one
+SELECT id, username, password, nickname, register_at, is_validated, validated_at, created_at FROM users
+WHERE username = $1
+`
+
+func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByUsername, username)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Password,
+		&i.Nickname,
+		&i.RegisterAt,
+		&i.IsValidated,
+		&i.ValidatedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const listSettings = `-- name: ListSettings :many
 SELECT key, value, description, updated_at FROM settings
 `
@@ -185,6 +268,39 @@ func (q *Queries) ListTodos(ctx context.Context) ([]Todo, error) {
 			&i.Title,
 			&i.Description,
 			&i.Completed,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUsers = `-- name: ListUsers :many
+SELECT id, username, password, nickname, register_at, is_validated, validated_at, created_at FROM users
+`
+
+func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.Query(ctx, listUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Password,
+			&i.Nickname,
+			&i.RegisterAt,
+			&i.IsValidated,
+			&i.ValidatedAt,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err

@@ -71,3 +71,53 @@ RETURNING *;
 UPDATE todos
 SET title = $2, description = $3, completed = $4
 WHERE id = $1;
+
+
+-- 用户 ===============================
+
+-- name: GetUser :one
+SELECT * FROM users
+WHERE id = $1;
+
+-- name: GetUserByUsername :one
+SELECT * FROM users
+WHERE username = $1;
+
+-- name: ListUsers :many
+SELECT * FROM users;
+
+-- name: CountUsers :one
+SELECT COUNT(*) FROM users;
+
+-- name: CreateUser :one
+INSERT INTO users (username, password, nickname)
+VALUES ($1, $2, $3)
+RETURNING *;
+
+
+-- 邮箱 ================================
+
+-- name: ListEmails :many
+SELECT * FROM emails;
+
+-- name: ListEmailsByUserId :many
+SELECT * FROM emails
+WHERE user_id = $1;
+
+-- name: GetEmail :one
+SELECT * FROM emails
+WHERE id = $1;
+
+-- name: GetEmailByAddress :one
+SELECT * FROM emails
+WHERE email = $1;
+
+-- name: CreateEmail :one
+INSERT INTO emails (user_id, email, is_primary, is_verified)
+VALUES ($1, $2, $3, $4)
+RETURNING *;
+
+-- name: UpdateEmail :exec
+UPDATE emails
+SET is_primary = $2, is_verified = $3
+WHERE id = $1;

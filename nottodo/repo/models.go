@@ -20,6 +20,22 @@ type AppCache struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
+// 邮箱
+type Email struct {
+	// ID
+	ID int64 `json:"id"`
+	// 用户ID
+	UserID int64 `json:"user_id"`
+	// 邮箱地址
+	Email string `json:"email"`
+	// 是否为主要邮箱
+	IsPrimary bool `json:"is_primary"`
+	// 是否已验证
+	IsVerified bool `json:"is_verified"`
+	// 创建时间
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
 // 系统设置
 type Setting struct {
 	// 键
@@ -42,6 +58,22 @@ type Todo struct {
 	Description pgtype.Text `json:"description"`
 	// 是否完成
 	Completed bool `json:"completed"`
+	// 创建时间
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+// 用户
+type User struct {
+	// ID
+	ID int64 `json:"id"`
+	// 用户名
+	Username string `json:"username"`
+	// 密码
+	Password    string             `json:"password"`
+	Nickname    pgtype.Text        `json:"nickname"`
+	RegisterAt  pgtype.Timestamptz `json:"register_at"`
+	IsValidated bool               `json:"is_validated"`
+	ValidatedAt pgtype.Timestamptz `json:"validated_at"`
 	// 创建时间
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
