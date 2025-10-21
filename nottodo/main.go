@@ -12,7 +12,18 @@ import (
 	"resty.dev/v3"
 )
 
+const banner = `
+▗▖  ▗▖ ▄▄▄     ■      ▗▄▄▄▖▄▄▄      ▗▄▄▄   ▄▄▄  
+▐▛▚▖▐▌█   █ ▗▄▟▙▄▖      █ █   █     ▐▌  █ █   █ 
+▐▌ ▝▜▌▀▄▄▄▀   ▐▌        █ ▀▄▄▄▀     ▐▌  █ ▀▄▄▄▀ 
+▐▌  ▐▌        ▐▌        █           ▐▙▄▄▀       
+              ▐▌                                
+`
+
 func main() {
+	// 显示启动banner
+	println(banner)
+
 	// 读取配置（仅用于环境与模式控制，当前无需数据库）
 	cfg := config.GlobalConfig
 
@@ -23,6 +34,7 @@ func main() {
 	}
 	slog.SetLogLoggerLevel(level)
 
+	// 检查时间差
 	err := checkTimeDiff(60)
 	if err != nil {
 		panic(err)
@@ -31,6 +43,7 @@ func main() {
 	// 开启交互式终端（仅开发模式）
 	runInteractiveShell(cfg.Mode)
 
+	// 启动服务器
 	if err := s.Run(":8082"); err != nil {
 		panic(err)
 	}
