@@ -38,38 +38,46 @@ func runInteractiveShell(mode config.Mode) {
             cmd := parts[0]
             switch cmd {
             case "noop":
-                fmt.Println("ok")
+                handleNoop()
             case "adduser":
-                if len(parts) != 3 {
-                    fmt.Println("用法: adduser <username> <password>")
-                    continue
-                }
-                username := parts[1]
-                password := parts[2]
-
-                req := usersvc.CreateUserRequest{Username: username, Password: password}
-                if err := req.Validate(); err != nil {
-                    fmt.Println("错误: ", err)
-                    continue
-                }
-                ctx := rest.NewEmptyContext()
-                req.Handle(&ctx)
-                if resp, ok := ctx.Result.(model.GeneralResponse); ok {
-                    if resp.Code != model.SUCCESS {
-                        fmt.Println("错误: ", resp.Message)
-                        continue
-                    }
-                    if u, ok := resp.Data.(usersvc.UserResponse); ok {
-                        fmt.Printf("ok, 用户已创建，ID=%d, 用户名=%s\n", u.ID, username)
-                    } else {
-                        fmt.Println("ok")
-                    }
-                } else {
-                    fmt.Println("ok")
-                }
+                handleAddUser(parts[1:])
             default:
                 fmt.Println(help)
             }
         }
     }()
+}
+
+func handleNoop() {
+    fmt.Println("ok")
+}
+
+func handleAddUser(args []string) {
+    if len(args) != 2 {
+        fmt.Println("用法: adduser <username> <password>")
+        return
+    }
+    username := args[0]
+    password := args[1]
+
+    req := usersvc.CreateUserRequest{Username: username, Password: password}
+    if err := req.Validate(); err != nil {
+        fmt.Println("错误: ", err)
+        return
+    }
+    ctx := rest.NewEmptyContext()
+    req.Handle(&ctx)
+    if resp, ok := ctx.Result.(model.GeneralResponse); ok {
+        if resp.Code != model.SUCCESS {
+            fmt.Println("错误: ", resp.Message)
+            return
+        }
+        if u, ok := resp.Data.(usersvc.UserResponse); ok {
+            fmt.Printf("ok, 用户已创建，ID=%d, 用户名=%s\n", u.ID, username)
+        } else {
+            fmt.Println("ok")
+        }
+    } else {
+        fmt.Println("ok")
+    }
 }
