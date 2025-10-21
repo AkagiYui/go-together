@@ -195,7 +195,7 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 // writeResponse 统一处理响应写入
 func (s *Server) writeResponse(w http.ResponseWriter, result any, ctx *Context) {
 	if result == nil {
-		w.WriteHeader(ctx.statusCode)
+		w.WriteHeader(ctx.StatusCode)
 		return
 	}
 
@@ -206,11 +206,11 @@ func (s *Server) writeResponse(w http.ResponseWriter, result any, ctx *Context) 
 	switch result := result.(type) {
 	case string:
 		w.Header().Set("Content-Type", "text/plain")
-		w.WriteHeader(ctx.statusCode)
+		w.WriteHeader(ctx.StatusCode)
 		w.Write([]byte(result))
 	case int:
 		w.Header().Set("Content-Type", "text/plain")
-		w.WriteHeader(ctx.statusCode)
+		w.WriteHeader(ctx.StatusCode)
 		w.Write([]byte(strconv.Itoa(result)))
 	default:
 		b, err := json.Marshal(result)
@@ -220,7 +220,7 @@ func (s *Server) writeResponse(w http.ResponseWriter, result any, ctx *Context) 
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(ctx.statusCode)
+		w.WriteHeader(ctx.StatusCode)
 		w.Write(b)
 	}
 }
@@ -258,6 +258,6 @@ func contextGoWithLog(ctx *Context, server *Server, lastHandlerName string) {
 	// log if dev
 	if server.Debug {
 		consumeMs := time.Since(startTime).Milliseconds()
-		fmt.Printf("%s <-- [%7s|%3d|%3dms] %s from %s\n", ctx.RemoteAddr, ctx.Method, ctx.statusCode, consumeMs, ctx.Endpoint, lastHandlerName)
+		fmt.Printf("%s <-- [%7s|%3d|%3dms] %s from %s\n", ctx.RemoteAddr, ctx.Method, ctx.StatusCode, consumeMs, ctx.Endpoint, lastHandlerName)
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"reflect"
 	"slices"
+	"strings"
 	"sync"
 )
 
@@ -34,7 +35,7 @@ type Request struct {
 }
 
 type Response struct {
-	statusCode int
+	StatusCode int
 	Result     any
 	Headers    http.Header
 }
@@ -58,7 +59,7 @@ type Context struct {
 }
 
 func (c *Response) Status(code int) {
-	c.statusCode = code
+	c.StatusCode = code
 }
 
 func (c *Response) SetResult(result any) {
@@ -124,7 +125,7 @@ func NewContext(r *http.Request, w *http.ResponseWriter, s *Server, runnerChain 
 			Body:     nil,
 		},
 		Response: Response{
-			statusCode: http.StatusOK,
+			StatusCode: http.StatusOK,
 			Result:     nil,
 			Headers:    make(http.Header),
 		},
@@ -145,8 +146,9 @@ func NewContext(r *http.Request, w *http.ResponseWriter, s *Server, runnerChain 
 
 	// 解析请求体类型
 	contentType, _, err := mime.ParseMediaType(ctx.Request.Header.Get("Content-Type"))
+
 	if err != nil {
-		if !slices.Contains([]string{http.MethodGet}, ctx.Method) {
+		if !slices.Contains([]string{http.MethodGet}, ctx.Method) && !strings.Contains(err.Error(), "no media type") {
 			fmt.Printf("Method: %s, Content-Type: %s\n", ctx.Method, contentType)
 			ctx.Status(http.StatusBadRequest)
 			ctx.SetResult("Invalid Content-Type")
@@ -290,4 +292,10 @@ func (c *Context) writeHeaders() {
 
 func (c *Context) DisableInternalResponse() {
 	c.disableInternalResponse = true
+}
+
+func NewEmptyContext() Context {
+	return Context{
+		disableInternalResponse: true,
+	}
 }
