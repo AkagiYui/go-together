@@ -11,7 +11,7 @@ func main() {
 	// 开启交互式终端（仅开发模式）
 	runInteractiveShell(cfg.Mode)
 
-	if err := s.Run(":8080"); err != nil {
+	if err := s.Run(":8082"); err != nil {
 		panic(err)
 	}
 }
