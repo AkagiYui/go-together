@@ -11,32 +11,49 @@ import (
 	"github.com/akagiyui/go-together/rest"
 )
 
-const IsAllowRegistrationCacheKey = "is_allow_registration"
+const IsAllowRegistrationCacheKey = "setting:is_allow_registration"
 
 type GetIsAllowRegistration struct{}
 
-func (r *GetIsAllowRegistration) Handle(ctx *rest.Context) {
-	allowed, err := repo.GetIsAllowRegistration()
+func (r GetIsAllowRegistration) Handle(ctx *rest.Context) {
+	allowed, err := r.Do()
 	if err != nil {
 		ctx.SetResult(model.InternalError(err))
 		return
 	}
-
-	task.Run(func() {
-		cache.Set(IsAllowRegistrationCacheKey, allowed, 5*time.Minute)
-	})
-
 	ctx.SetResult(model.Success(allowed))
+}
+
+func (r GetIsAllowRegistration) Do() (allowed bool, err error) {
+	// read from cache
+	if err := cache.Get(IsAllowRegistrationCacheKey, &allowed); err == nil {
+		return allowed, nil
+	}
+
+	defer func() {
+		task.Run(func() {
+			cache.Set(IsAllowRegistrationCacheKey, allowed, 5*time.Minute)
+		})
+	}()
+	return repo.GetIsAllowRegistration()
 }
 
 type SetIsAllowRegistration struct {
 	Allowed bool `json:"allowed"`
 }
 
-func (r *SetIsAllowRegistration) Handle(ctx *rest.Context) {
-	if err := repo.SetIsAllowRegistration(r.Allowed); err != nil {
+func (r SetIsAllowRegistration) Handle(ctx *rest.Context) {
+	if err := r.Do(); err != nil {
 		ctx.SetResult(model.InternalError(err))
 		return
+	}
+	ctx.SetResult(model.Success(nil))
+}
+
+func (r SetIsAllowRegistration) Do() error {
+	err := repo.SetIsAllowRegistration(r.Allowed)
+	if err != nil {
+		return err
 	}
 
 	task.Run(func() {
@@ -45,5 +62,5 @@ func (r *SetIsAllowRegistration) Handle(ctx *rest.Context) {
 		}
 	})
 
-	ctx.SetResult(model.Success(nil))
+	return nil
 }
