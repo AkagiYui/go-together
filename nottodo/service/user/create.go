@@ -17,7 +17,7 @@ type CreateUserRequest struct {
 	Nickname string `json:"nickname"`
 }
 
-func (r *CreateUserRequest) Validate() error {
+func (r CreateUserRequest) Validate() error {
 	return errors.Join(
 		validation.Required(r.Username, "用户名"),
 		validation.Required(r.Password, "密码"),
