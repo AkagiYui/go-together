@@ -1,6 +1,7 @@
 package todo
 
 import (
+	"database/sql"
 	"errors"
 
 	"github.com/akagiyui/go-together/common/model"
@@ -16,7 +17,7 @@ type UpdateTodoRequest struct {
 	repo.Todo
 }
 
-func (r *UpdateTodoRequest) Validate() error {
+func (r UpdateTodoRequest) Validate() error {
 	errs := make([]error, 0)
 	errs = append(errs, validation.PositiveInt64(r.ID, "ID"))
 	errs = append(errs, validation.MaxLength(r.Description.String, 500, "描述"))
@@ -29,11 +30,23 @@ func (r *UpdateTodoRequest) Validate() error {
 	return errors.Join(errs...)
 }
 
-func (r *UpdateTodoRequest) Handle(ctx *rest.Context) {
+func (r UpdateTodoRequest) Handle(ctx *rest.Context) {
+	err := r.Do()
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			ctx.SetResult(model.Error(model.NOT_FOUND, "Todo not found"))
+			return
+		}
+		ctx.SetResult(model.InternalError(err))
+		return
+	}
+	ctx.SetResult(model.Success(nil))
+}
+
+func (r UpdateTodoRequest) Do() error {
 	oriTodo, err := repo.GetTodoByID(r.ID)
 	if err != nil {
-		ctx.SetResult(model.Error(model.NOT_FOUND, "Todo not found"))
-		return
+		return err
 	}
 
 	if r.Todo.Title != "" {
@@ -43,9 +56,5 @@ func (r *UpdateTodoRequest) Handle(ctx *rest.Context) {
 		oriTodo.Description = r.Todo.Description
 	}
 
-	if repo.UpdateTodo(oriTodo) {
-		ctx.SetResult(model.Success(oriTodo))
-	} else {
-		ctx.SetResult(model.InternalError())
-	}
+	return repo.UpdateTodo(oriTodo)
 }

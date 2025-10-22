@@ -19,7 +19,7 @@ func GetTodoByID(id int64) (Todo, error) {
 	return todo, nil
 }
 
-func UpdateTodo(todo Todo) bool {
+func UpdateTodo(todo Todo) error {
 	updateParam := UpdateTodoParams{
 		ID:          todo.ID,
 		Title:       todo.Title,
@@ -27,10 +27,7 @@ func UpdateTodo(todo Todo) bool {
 		Completed:   todo.Completed,
 	}
 
-	if err := Db.UpdateTodo(Ctx, updateParam); err != nil {
-		return false
-	}
-	return true
+	return Db.UpdateTodo(Ctx, updateParam)
 }
 
 func DeleteTodo(id int64) error {

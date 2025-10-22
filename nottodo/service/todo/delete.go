@@ -13,14 +13,18 @@ type DeleteTodoRequest struct {
 	ID int64 `path:"id"`
 }
 
-func (r *DeleteTodoRequest) Validate() error {
+func (r DeleteTodoRequest) Validate() error {
 	return validation.PositiveInt64(r.ID, "ID")
 }
 
-func (r *DeleteTodoRequest) Handle(ctx *rest.Context) {
-	if err := repo.DeleteTodo(int64(r.ID)); err != nil {
+func (r DeleteTodoRequest) Handle(ctx *rest.Context) {
+	if err := r.Do(); err != nil {
 		ctx.SetResult(model.Error(model.NOT_FOUND, "Todo not found"))
 		return
 	}
 	ctx.SetResult(model.Success(nil))
+}
+
+func (r DeleteTodoRequest) Do() error {
+	return repo.DeleteTodo(r.ID)
 }

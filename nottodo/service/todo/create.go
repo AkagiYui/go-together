@@ -15,7 +15,7 @@ type CreateTodoRequest struct {
 	repo.Todo
 }
 
-func (r *CreateTodoRequest) Validate() error {
+func (r CreateTodoRequest) Validate() error {
 	return errors.Join(
 		validation.Required(r.Title, "标题"),
 		validation.MaxLength(r.Title, 100, "标题"),
@@ -23,17 +23,19 @@ func (r *CreateTodoRequest) Validate() error {
 	)
 }
 
-func (r *CreateTodoRequest) Handle(ctx *rest.Context) {
-	newTodo := repo.Todo{
-		Title:       r.Title,
-		Description: r.Description,
-		Completed:   r.Completed,
-	}
-
-	newTodo, err := repo.CreateTodo(newTodo)
+func (r CreateTodoRequest) Handle(ctx *rest.Context) {
+	newTodo, err := r.Do()
 	if err != nil {
 		ctx.SetResult(model.InternalError(err))
 		return
 	}
 	ctx.SetResult(model.Success(newTodo))
+}
+
+func (r CreateTodoRequest) Do() (repo.Todo, error) {
+	return repo.CreateTodo(repo.Todo{
+		Title:       r.Title,
+		Description: r.Description,
+		Completed:   r.Completed,
+	})
 }
