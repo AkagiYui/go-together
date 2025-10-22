@@ -8,6 +8,7 @@ import (
 
 	"log/slog"
 
+	"github.com/akagiyui/go-together/nottodo/command"
 	"github.com/akagiyui/go-together/nottodo/config"
 	"resty.dev/v3"
 )
@@ -41,7 +42,7 @@ func main() {
 	}
 
 	// 开启交互式终端（仅开发模式）
-	runInteractiveShell(cfg.Mode)
+	command.RunInteractiveShell(cfg.Mode)
 
 	// 启动服务器
 	if err := s.Run(fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)); err != nil {
