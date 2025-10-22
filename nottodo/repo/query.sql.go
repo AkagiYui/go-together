@@ -33,6 +33,38 @@ func (q *Queries) CountUsers(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const createEmail = `-- name: CreateEmail :one
+INSERT INTO emails (user_id, email, is_primary, is_verified)
+VALUES ($1, $2, $3, $4)
+RETURNING id, user_id, email, is_primary, is_verified, created_at
+`
+
+type CreateEmailParams struct {
+	UserID     int64  `json:"user_id"`
+	Email      string `json:"email"`
+	IsPrimary  bool   `json:"is_primary"`
+	IsVerified bool   `json:"is_verified"`
+}
+
+func (q *Queries) CreateEmail(ctx context.Context, arg CreateEmailParams) (Email, error) {
+	row := q.db.QueryRow(ctx, createEmail,
+		arg.UserID,
+		arg.Email,
+		arg.IsPrimary,
+		arg.IsVerified,
+	)
+	var i Email
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Email,
+		&i.IsPrimary,
+		&i.IsVerified,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const createTodo = `-- name: CreateTodo :one
 INSERT INTO todos (title, description, completed)
 VALUES ($1, $2, $3)
@@ -137,6 +169,44 @@ func (q *Queries) GetCache(ctx context.Context, key string) (GetCacheRow, error)
 	return i, err
 }
 
+const getEmail = `-- name: GetEmail :one
+SELECT id, user_id, email, is_primary, is_verified, created_at FROM emails
+WHERE id = $1
+`
+
+func (q *Queries) GetEmail(ctx context.Context, id int64) (Email, error) {
+	row := q.db.QueryRow(ctx, getEmail, id)
+	var i Email
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Email,
+		&i.IsPrimary,
+		&i.IsVerified,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getEmailByAddress = `-- name: GetEmailByAddress :one
+SELECT id, user_id, email, is_primary, is_verified, created_at FROM emails
+WHERE email = $1
+`
+
+func (q *Queries) GetEmailByAddress(ctx context.Context, email string) (Email, error) {
+	row := q.db.QueryRow(ctx, getEmailByAddress, email)
+	var i Email
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Email,
+		&i.IsPrimary,
+		&i.IsVerified,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getSetting = `-- name: GetSetting :one
 
 SELECT key, value, description, updated_at FROM settings
@@ -216,6 +286,71 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const listEmails = `-- name: ListEmails :many
+
+SELECT id, user_id, email, is_primary, is_verified, created_at FROM emails
+`
+
+// 邮箱 ================================
+func (q *Queries) ListEmails(ctx context.Context) ([]Email, error) {
+	rows, err := q.db.Query(ctx, listEmails)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Email
+	for rows.Next() {
+		var i Email
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Email,
+			&i.IsPrimary,
+			&i.IsVerified,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listEmailsByUserId = `-- name: ListEmailsByUserId :many
+SELECT id, user_id, email, is_primary, is_verified, created_at FROM emails
+WHERE user_id = $1
+`
+
+func (q *Queries) ListEmailsByUserId(ctx context.Context, userID int64) ([]Email, error) {
+	rows, err := q.db.Query(ctx, listEmailsByUserId, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Email
+	for rows.Next() {
+		var i Email
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Email,
+			&i.IsPrimary,
+			&i.IsVerified,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listSettings = `-- name: ListSettings :many
@@ -367,6 +502,23 @@ func (q *Queries) SetSetting(ctx context.Context, arg SetSettingParams) (Setting
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const updateEmail = `-- name: UpdateEmail :exec
+UPDATE emails
+SET is_primary = $2, is_verified = $3
+WHERE id = $1
+`
+
+type UpdateEmailParams struct {
+	ID         int64 `json:"id"`
+	IsPrimary  bool  `json:"is_primary"`
+	IsVerified bool  `json:"is_verified"`
+}
+
+func (q *Queries) UpdateEmail(ctx context.Context, arg UpdateEmailParams) error {
+	_, err := q.db.Exec(ctx, updateEmail, arg.ID, arg.IsPrimary, arg.IsVerified)
+	return err
 }
 
 const updateTodo = `-- name: UpdateTodo :exec

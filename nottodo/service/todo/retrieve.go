@@ -44,5 +44,5 @@ func (r GetTodoByIDRequest) Handle(ctx *rest.Context) {
 }
 
 func (r GetTodoByIDRequest) Do() (repo.Todo, error) {
-	return repo.GetTodoByID(r.ID)
+	return repo.GetTodoById(r.ID)
 }

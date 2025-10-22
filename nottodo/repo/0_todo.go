@@ -11,7 +11,7 @@ func GetTodos() ([]Todo, int64, error) {
 	return todos, total, err
 }
 
-func GetTodoByID(id int64) (Todo, error) {
+func GetTodoById(id int64) (Todo, error) {
 	todo, err := Db.GetTodo(Ctx, id)
 	if err != nil {
 		return Todo{}, err

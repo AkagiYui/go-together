@@ -44,7 +44,7 @@ func (r UpdateTodoRequest) Handle(ctx *rest.Context) {
 }
 
 func (r UpdateTodoRequest) Do() error {
-	oriTodo, err := repo.GetTodoByID(r.ID)
+	oriTodo, err := repo.GetTodoById(r.ID)
 	if err != nil {
 		return err
 	}
