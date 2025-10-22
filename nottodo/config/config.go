@@ -45,15 +45,20 @@ func ParseMode(s string) Mode {
 type Config struct {
 	DSN  string `validate:"required"`
 	Mode Mode   `validate:"oneof=prod dev"`
+	Port string `validate:"required"`
+	Host string `validate:"required"`
 }
 
 // Load 尝试先加载 .env 文件，再从环境变量读取配置
 func Load() (Config, error) {
 	_ = loadDotenv(".env")
 
-	dsn := strings.TrimSpace(os.Getenv("DSN"))
-	mode := ParseMode(os.Getenv("MODE"))
-	cfg := Config{DSN: dsn, Mode: mode}
+	cfg := Config{
+		DSN:  getEnv("DSN", "", true),
+		Mode: ParseMode(getEnv("MODE", "prod", true)),
+		Port: getEnv("PORT", "8082", true),
+		Host: getEnv("HOST", "0.0.0.0", true),
+	}
 	return cfg, validation.ValidateStruct(cfg)
 }
 
@@ -82,4 +87,15 @@ func loadDotenv(path string) error {
 		}
 	}
 	return nil
+}
+
+func getEnv(key string, defaultValue string, trim bool) string {
+	val := os.Getenv(key)
+	if val == "" {
+		return defaultValue
+	}
+	if trim {
+		return strings.TrimSpace(val)
+	}
+	return val
 }

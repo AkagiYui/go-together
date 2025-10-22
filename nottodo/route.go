@@ -1,6 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"strings"
+
+	"github.com/akagiyui/go-together/nottodo/config"
 	"github.com/akagiyui/go-together/nottodo/middleware"
 	"github.com/akagiyui/go-together/nottodo/service/system"
 	"github.com/akagiyui/go-together/nottodo/service/todo"
@@ -8,7 +12,7 @@ import (
 	"github.com/akagiyui/go-together/rest"
 )
 
-const comment = `🚀 Server starting on http://localhost:8082
+const comment = `🚀 Server starting on http://LISTEN
 📚 API Documentation:
 GET    /v1/todos        - 获取所有Todo
 GET    /v1/todos/{id}   - 获取指定ID的Todo
@@ -17,8 +21,9 @@ PUT    /v1/todos/{id}   - 更新指定ID的Todo
 DELETE /v1/todos/{id}   - 删除指定ID的Todo`
 
 func registerRoute() {
+	cfg := config.GlobalConfig
 	registerV1Route(s.Group("/v1"))
-	println(comment)
+	println(strings.Replace(comment, "LISTEN", fmt.Sprintf("%s:%s", cfg.Host, cfg.Port), 1))
 }
 
 func registerV1Route(r *rest.RouteGroup) {

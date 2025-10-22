@@ -44,7 +44,7 @@ func main() {
 	runInteractiveShell(cfg.Mode)
 
 	// 启动服务器
-	if err := s.Run(":8082"); err != nil {
+	if err := s.Run(fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)); err != nil {
 		panic(err)
 	}
 }
