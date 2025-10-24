@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/akagiyui/go-together/nottodo/config"
@@ -23,7 +24,14 @@ func (l *sqlLogger) Log(ctx context.Context, level tracelog.LogLevel, msg string
 	// 只打印 SQL 语句相关的日志
 	if sql, ok := data["sql"]; ok {
 		args := data["args"]
-		fmt.Printf("[SQL] %s | args: %v\n", strings.TrimSpace(sql.(string)), args)
+
+		sqlText := strings.TrimSpace(sql.(string))
+		// 去除所有注释
+		sqlText = regexp.MustCompile(`--.*`).ReplaceAllString(sqlText, "")
+		// 去除所有换行
+		sqlText = strings.ReplaceAll(sqlText, "\n", " ")
+
+		fmt.Printf("[SQL] %s | args: %v\n", sqlText, args)
 	}
 }
 
