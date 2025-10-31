@@ -1,6 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
+	"slices"
+
 	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/nottodo/config"
 	"github.com/akagiyui/go-together/nottodo/middleware"
@@ -21,20 +25,22 @@ func init() {
 	// 设置全局中间件
 	s.UseFunc(middleware.CorsMiddleware(), middleware.TimeConsumeMiddleware())
 
-	// s.UseFunc(func(ctx *rest.Context) {
-	// 	ctx.Next()
-	// 	if obj, ok := ctx.Result.(model.GeneralResponse); ok {
-	// 		ctx.Status(model.HttpStatus(model.BusinessCode(obj.Code)))
+	// 设置HTTP状态码
+	s.UseFunc(func(ctx *rest.Context) {
+		ctx.Next()
+		if obj, ok := ctx.Result.(model.GeneralResponse); ok {
+			businessCodeObj := model.BusinessCodeFromInt(obj.Code)
+			ctx.Status(model.HttpStatus(businessCodeObj))
 
-	// 		if !slices.Contains([]model.BusinessCode{model.ErrSuccess, model.ErrInternalError}, obj.Code) {
-	// 			fmt.Printf("500: %s\n", obj.Message)
-	// 		}
-	// 	} else {
-	// 		if ctx.StatusCode == http.StatusBadRequest {
-	// 			ctx.SetResult(model.Error(model.ErrInputError, "Invalid request"))
-	// 		}
-	// 	}
-	// })
+			if !slices.Contains([]model.BusinessCode{model.ErrSuccess, model.ErrInternalError}, businessCodeObj) {
+				fmt.Printf("500: %s\n", obj.Message)
+			}
+		} else {
+			if ctx.StatusCode == http.StatusBadRequest {
+				ctx.SetResult(model.Error(model.ErrInputError, "Invalid request"))
+			}
+		}
+	})
 
 	// 设置 404 处理器
 	s.SetNotFoundHandlers(func(ctx *rest.Context) {

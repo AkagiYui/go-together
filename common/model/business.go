@@ -24,6 +24,20 @@ var businessCodeMap = map[BusinessCode]int{
 	ErrUnauthorized:  3,
 	ErrInternalError: 4,
 }
+var businessCodeReverseMap = map[int]BusinessCode{}
+
+func init() {
+	for code, value := range businessCodeMap {
+		businessCodeReverseMap[value] = code
+	}
+}
+
+func BusinessCodeFromInt(code int) BusinessCode {
+	if businessCode, ok := businessCodeReverseMap[code]; ok {
+		return businessCode
+	}
+	return ErrInternalError
+}
 
 // statusMap BusinessCode->HTTP状态码 映射表
 var statusMap = map[BusinessCode]int{

@@ -11,3 +11,7 @@ func CreateUser(user User) (User, error) {
 func GetUserByUsername(username string) (User, error) {
 	return Db.GetUserByUsername(Ctx, username)
 }
+
+func GetUserById(id int64) (User, error) {
+	return Db.GetUser(Ctx, id)
+}
