@@ -4,4 +4,5 @@ use (
 	./common
 	./nottodo
 	./rest
+	./bluestacks
 )
