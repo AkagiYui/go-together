@@ -6,3 +6,10 @@ func GetInt64(key string) (int64, error) {
 	err := Get(key, &value)
 	return value, err
 }
+
+// GetSlice 获取一个切片
+func GetSlice[T any](key string) ([]T, error) {
+	var value []T
+	err := Get(key, &value)
+	return value, err
+}

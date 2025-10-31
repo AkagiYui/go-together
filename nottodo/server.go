@@ -30,7 +30,7 @@ func init() {
 		ctx.Next()
 		if obj, ok := ctx.Result.(model.GeneralResponse); ok {
 			businessCodeObj := model.BusinessCodeFromInt(obj.Code)
-			ctx.Status(model.HttpStatus(businessCodeObj))
+			ctx.SetStatusCode(model.HttpStatus(businessCodeObj))
 
 			if !slices.Contains([]model.BusinessCode{model.ErrSuccess, model.ErrInternalError}, businessCodeObj) {
 				fmt.Printf("500: %s\n", obj.Message)

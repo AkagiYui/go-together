@@ -117,7 +117,7 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, []str
 			// 解析 query/path/header 参数
 			needParseJsonBody, err := parseParams(ctx, handlerInterface)
 			if err != nil {
-				ctx.Status(http.StatusBadRequest)
+				ctx.SetStatus(http.StatusBadRequest)
 				ctx.SetResult("Failed to parse parameters: " + err.Error())
 				return
 			}
@@ -125,7 +125,7 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, []str
 			// 如果需要解析请求体，尝试解析 JSON 到结构体
 			if needParseJsonBody && ctx.BodyType == Json && ctx.ContentLength > 0 {
 				if err := json.Unmarshal(ctx.FillBody(), handlerInterface); err != nil {
-					ctx.Status(http.StatusBadRequest)
+					ctx.SetStatusCode(http.StatusBadRequest)
 					ctx.SetResult("Invalid JSON format: " + err.Error())
 					return
 				}
@@ -137,7 +137,7 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, []str
 					if ctx.Server.validationErrorHandler != nil {
 						ctx.Server.validationErrorHandler(ctx, err)
 					} else {
-						ctx.Status(http.StatusBadRequest)
+						ctx.SetStatusCode(http.StatusBadRequest)
 						ctx.SetResult("Validation failed: " + err.Error())
 					}
 					return

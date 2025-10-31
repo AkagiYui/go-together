@@ -5,6 +5,9 @@ type HandlerFunc func(*Context)
 type HandlerInterface interface {
 	Handle(*Context)
 }
+type ServiceHandlerInterface interface {
+	Do() (any, error)
+}
 
 // Validator 接口用于在参数绑定后、业务处理前进行数据校验
 // 实现此接口的 handler 会在 Handle 方法调用前自动执行 Validate 方法
@@ -36,6 +39,10 @@ func (g *RouteGroup) Handle(path string, method string, handlerTypes ...HandlerI
 	factory.RunnerChain = runners
 	factory.HandlerNames = names
 	g.Factories = append(g.Factories, factory)
+	return nil
+}
+
+func (g *RouteGroup) HandleService(path string, method string, handlerTypes ...ServiceHandlerInterface) error {
 	return nil
 }
 

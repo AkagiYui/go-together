@@ -171,7 +171,7 @@ func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
 			handlers = append(handlers, server.notFoundHandlers...)
 
 			ctx := NewContext(r, &w, server, handlers)
-			ctx.Status(http.StatusNotFound) // 默认设置 404 状态码
+			ctx.SetStatusCode(http.StatusNotFound) // 默认设置 404 状态码
 			defer func() {
 				if err := recover(); err != nil {
 					fmt.Println(err)

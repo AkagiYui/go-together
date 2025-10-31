@@ -36,6 +36,7 @@ type Request struct {
 
 type Response struct {
 	StatusCode int
+	Status     any
 	Result     any
 	Headers    http.Header
 }
@@ -58,7 +59,11 @@ type Context struct {
 	disableInternalResponse bool
 }
 
-func (c *Response) Status(code int) {
+func (c *Context) SetStatus(status any) {
+	c.Status = status
+}
+
+func (c *Response) SetStatusCode(code int) {
 	c.StatusCode = code
 }
 
@@ -150,7 +155,7 @@ func NewContext(r *http.Request, w *http.ResponseWriter, s *Server, runnerChain 
 	if err != nil {
 		if !slices.Contains([]string{http.MethodGet}, ctx.Method) && !strings.Contains(err.Error(), "no media type") {
 			fmt.Printf("Method: %s, Content-Type: %s\n", ctx.Method, contentType)
-			ctx.Status(http.StatusBadRequest)
+			ctx.SetStatusCode(http.StatusBadRequest)
 			ctx.SetResult("Invalid Content-Type")
 			ctx.Abort()
 			return ctx
