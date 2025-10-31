@@ -19,7 +19,7 @@ func (r DeleteTodoRequest) Validate() error {
 
 func (r DeleteTodoRequest) Handle(ctx *rest.Context) {
 	if err := r.Do(); err != nil {
-		ctx.SetResult(model.Error(model.NOT_FOUND, "Todo not found"))
+		ctx.SetResult(model.Error(model.ErrNotFound, "Todo not found"))
 		return
 	}
 	ctx.SetResult(model.Success(nil))

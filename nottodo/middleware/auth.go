@@ -10,7 +10,7 @@ func AuthMiddleware() rest.HandlerFunc {
 		// 验证 token
 		token := ctx.Request.Header.Get("Authorization")
 		if token != "Bearer 123" {
-			ctx.SetResult(model.Error(model.UNAUTHORIZED, "Unauthorized"))
+			ctx.SetResult(model.Error(model.ErrUnauthorized, "Unauthorized"))
 			ctx.Abort()
 			return
 		}

@@ -34,7 +34,7 @@ func (r UpdateTodoRequest) Handle(ctx *rest.Context) {
 	err := r.Do()
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			ctx.SetResult(model.Error(model.NOT_FOUND, "Todo not found"))
+			ctx.SetResult(model.Error(model.ErrNotFound, "Todo not found"))
 			return
 		}
 		ctx.SetResult(model.InternalError(err))

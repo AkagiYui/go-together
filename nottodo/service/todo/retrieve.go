@@ -14,7 +14,7 @@ type GetTodosRequest struct{}
 func (r GetTodosRequest) Handle(ctx *rest.Context) {
 	list, total, err := r.Do()
 	if err != nil {
-		ctx.SetResult(model.Error(model.INPUT_ERROR, err.Error()))
+		ctx.SetResult(model.Error(model.ErrInputError))
 		return
 	}
 	ctx.SetResult(model.Success(model.Page(total, list)))
@@ -37,7 +37,7 @@ func (r GetTodoByIDRequest) Validate() error {
 func (r GetTodoByIDRequest) Handle(ctx *rest.Context) {
 	todo, err := r.Do()
 	if err != nil {
-		ctx.SetResult(model.Error(model.NOT_FOUND, "Todo not found"))
+		ctx.SetResult(model.Error(model.ErrNotFound))
 		return
 	}
 	ctx.SetResult(model.Success(todo))

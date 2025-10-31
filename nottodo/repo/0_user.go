@@ -7,3 +7,7 @@ func CreateUser(user User) (User, error) {
 		Nickname: user.Nickname,
 	})
 }
+
+func GetUserByUsername(username string) (User, error) {
+	return Db.GetUserByUsername(Ctx, username)
+}

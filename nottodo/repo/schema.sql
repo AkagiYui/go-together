@@ -80,6 +80,10 @@ COMMENT ON TABLE users IS '用户';
 COMMENT ON COLUMN users.id IS 'ID';
 COMMENT ON COLUMN users.username IS '用户名';
 COMMENT ON COLUMN users.password IS '密码';
+COMMENT ON COLUMN users.nickname IS '昵称';
+COMMENT ON COLUMN users.register_at IS '注册时间';
+COMMENT ON COLUMN users.is_validated IS '是否已通过验证';
+COMMENT ON COLUMN users.validated_at IS '验证时间';
 COMMENT ON COLUMN users.created_at IS '创建时间';
 
 -- 邮箱 ===============================
