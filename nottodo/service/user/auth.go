@@ -22,7 +22,7 @@ type GenerateTokenResponse struct {
 func (r GenerateTokenRequest) Handle(ctx *rest.Context) {
 	token, err := r.Do()
 	if err != nil {
-		ctx.SetResult(model.InternalError(err))
+		ctx.SetResult(model.Error(err))
 		return
 	}
 	ctx.SetResult(model.Success(GenerateTokenResponse{Token: token}))
@@ -40,7 +40,7 @@ func (r GenerateTokenRequest) Do() (string, error) {
 		return "", err
 	}
 	if !match {
-		return "", model.UNAUTHORIZED
+		return "", model.ErrUnauthorized
 	}
 
 	// 生成 32 字节的随机数据
