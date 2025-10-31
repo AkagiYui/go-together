@@ -4,3 +4,7 @@ example*
 __debug*
 *.png
 .env
+
+# ai
+.zed
+.augment

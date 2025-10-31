@@ -68,9 +68,10 @@ func readBlueStacksConfig(configPath string) map[string]InstanceInfo {
 		info := instances[instanceName]
 
 		// 根据属性路径设置值
-		if propertyPath == "status.adb_port" {
+		switch propertyPath {
+		case "status.adb_port":
 			info.AdbPort = value
-		} else if propertyPath == "display_name" {
+		case "display_name":
 			info.DisplayName = value
 		}
 
