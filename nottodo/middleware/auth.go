@@ -15,7 +15,7 @@ func AuthMiddleware() rest.HandlerFunc {
 		// 验证 token
 		rawToken := ctx.Request.Header.Get("Authorization")
 		if token, ok := strings.CutPrefix(rawToken, "Bearer "); ok {
-			userId, err := cache.GetInt64("token:" + token)
+			userId, err := cache.GetInt64("auth_token:" + token)
 			if err != nil {
 				return
 			}

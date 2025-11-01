@@ -3,8 +3,10 @@ package user
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"time"
 
 	"github.com/akagiyui/go-together/common/model"
+	"github.com/akagiyui/go-together/nottodo/cache"
 	"github.com/akagiyui/go-together/nottodo/pkg"
 	"github.com/akagiyui/go-together/nottodo/repo"
 )
@@ -42,6 +44,12 @@ func (r GenerateTokenRequest) Do() (any, error) {
 	// 将随机字节转换为十六进制字符串
 	// 结果是 64 个字符的字符串（32 字节 * 2）
 	token := hex.EncodeToString(tokenBytes)
+
+	// 将 token 和用户 ID 写入缓存
+	err = cache.Set("auth_token:"+token, user.ID, 24*time.Hour)
+	if err != nil {
+		return "", err
+	}
 
 	return GenerateTokenResponse{Token: token}, nil
 }

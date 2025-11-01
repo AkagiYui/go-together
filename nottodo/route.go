@@ -51,6 +51,7 @@ func registerV1Route(r *rest.RouteGroup) {
 
 		userGroup := requireAuthGroup.Group("/user")
 		{
+			userGroup.GetServ("/info", &user.GetUserInfoRequest{})
 			userGroup.Post("", &user.CreateUserRequest{})
 		}
 	}
