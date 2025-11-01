@@ -33,8 +33,15 @@ func init() {
 		if ctx.Status != nil {
 			if ctx.Status != model.ErrSuccess {
 				businessCodeObj := ctx.Status.(model.BusinessCode)
-				ctx.SetResult(model.Error(businessCodeObj))
-				ctx.SetStatusCode(model.HttpStatus(businessCodeObj))
+				httpStatusCode := model.HttpStatus(businessCodeObj)
+
+				ctx.SetStatusCode(httpStatusCode)
+				if httpStatusCode < 500 {
+					ctx.SetResult(model.Error(businessCodeObj))
+				} else {
+					ctx.SetResult(model.InternalError())
+					fmt.Printf("500: %s\n", businessCodeObj.Error())
+				}
 				return
 			}
 		}
