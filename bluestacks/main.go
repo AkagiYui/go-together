@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -156,6 +158,16 @@ func printTable(instances map[string]InstanceInfo, devices []AdbDevice) {
 	t.Render()
 }
 
+// enterAltScreen 进入替代屏幕缓冲区
+func enterAltScreen() {
+	fmt.Print("\033[?1049h")
+}
+
+// exitAltScreen 退出替代屏幕缓冲区
+func exitAltScreen() {
+	fmt.Print("\033[?1049l")
+}
+
 // clearScreen 清屏并移动光标到开头
 func clearScreen() {
 	fmt.Print("\033[2J\033[H")
@@ -163,6 +175,14 @@ func clearScreen() {
 
 func main() {
 	configPath := "/Users/Shared/Library/Application Support/BlueStacks/bluestacks.conf"
+
+	// 进入替代屏幕缓冲区
+	enterAltScreen()
+	defer exitAltScreen()
+
+	// 设置信号处理，确保在退出时清理
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	// 创建定时器，每秒执行一次
 	ticker := time.NewTicker(1 * time.Second)
@@ -175,10 +195,16 @@ func main() {
 	printTable(instances, devices)
 
 	// 定时刷新
-	for range ticker.C {
-		clearScreen()
-		instances := readBlueStacksConfig(configPath)
-		devices := getAdbDevices()
-		printTable(instances, devices)
+	for {
+		select {
+		case <-ticker.C:
+			clearScreen()
+			instances := readBlueStacksConfig(configPath)
+			devices := getAdbDevices()
+			printTable(instances, devices)
+		case <-sigChan:
+			// 收到信号时退出，defer 会自动调用 exitAltScreen()
+			return
+		}
 	}
 }
