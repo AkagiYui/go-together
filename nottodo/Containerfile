@@ -7,8 +7,7 @@ RUN apk add --no-cache git ca-certificates
 # 设置工作目录
 WORKDIR /build
 
-# 复制 go.work 和所有模块的 go.mod 文件
-COPY go.work go.work.sum ./
+# 复制所有模块的 go.mod 文件
 COPY nottodo/go.mod nottodo/go.sum* nottodo/
 COPY rest/go.mod rest/go.sum* rest/
 COPY common/go.mod common/go.sum* common/
