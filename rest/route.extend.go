@@ -56,3 +56,28 @@ func (g *RouteGroup) AnyFunc(path string, handlerFunc ...HandlerFunc) error {
 	g.HandleFunc(path, "", handlerFunc...)
 	return nil
 }
+
+// 便捷方法：支持 ServiceHandlerInterface 的 HTTP 方法
+func (g *RouteGroup) GetServ(path string, handlerType ...ServiceHandlerInterface) error {
+	return g.HandleServ(path, http.MethodGet, handlerType...)
+}
+
+func (g *RouteGroup) PostServ(path string, handlerType ...ServiceHandlerInterface) error {
+	return g.HandleServ(path, http.MethodPost, handlerType...)
+}
+
+func (g *RouteGroup) PutServ(path string, handlerType ...ServiceHandlerInterface) error {
+	return g.HandleServ(path, http.MethodPut, handlerType...)
+}
+
+func (g *RouteGroup) DeleteServ(path string, handlerType ...ServiceHandlerInterface) error {
+	return g.HandleServ(path, http.MethodDelete, handlerType...)
+}
+
+func (g *RouteGroup) PatchServ(path string, handlerType ...ServiceHandlerInterface) error {
+	return g.HandleServ(path, http.MethodPatch, handlerType...)
+}
+
+func (g *RouteGroup) AnyServ(path string, handlerType ...ServiceHandlerInterface) error {
+	return g.HandleServ(path, "", handlerType...)
+}

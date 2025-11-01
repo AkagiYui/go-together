@@ -42,7 +42,21 @@ func (g *RouteGroup) Handle(path string, method string, handlerTypes ...HandlerI
 	return nil
 }
 
-func (g *RouteGroup) HandleService(path string, method string, handlerTypes ...ServiceHandlerInterface) error {
+func (g *RouteGroup) HandleServ(path string, method string, handlerTypes ...ServiceHandlerInterface) error {
+	factory := HandlerFactory{
+		Path:         path,
+		Method:       method,
+		RunnerChain:  nil,
+		HandlerNames: nil,
+	}
+
+	runners, names, err := runnersFromServiceHandlers(handlerTypes...)
+	if err != nil {
+		return err
+	}
+	factory.RunnerChain = runners
+	factory.HandlerNames = names
+	g.Factories = append(g.Factories, factory)
 	return nil
 }
 

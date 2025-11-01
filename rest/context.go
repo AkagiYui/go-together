@@ -130,6 +130,7 @@ func NewContext(r *http.Request, w *http.ResponseWriter, s *Server, runnerChain 
 			Body:     nil,
 		},
 		Response: Response{
+			Status:     nil,
 			StatusCode: http.StatusOK,
 			Result:     nil,
 			Headers:    make(http.Header),
