@@ -69,10 +69,14 @@ type User struct {
 	// 用户名
 	Username string `json:"username"`
 	// 密码
-	Password    string             `json:"password"`
-	Nickname    pgtype.Text        `json:"nickname"`
-	RegisterAt  pgtype.Timestamptz `json:"register_at"`
-	IsValidated bool               `json:"is_validated"`
+	Password string `json:"password"`
+	// 昵称
+	Nickname pgtype.Text `json:"nickname"`
+	// 注册时间
+	RegisterAt pgtype.Timestamptz `json:"register_at"`
+	// 是否已通过验证
+	IsValidated bool `json:"is_validated"`
+	// 验证时间
 	ValidatedAt pgtype.Timestamptz `json:"validated_at"`
 	// 创建时间
 	CreatedAt pgtype.Timestamptz `json:"created_at"`

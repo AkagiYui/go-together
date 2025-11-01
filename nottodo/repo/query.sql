@@ -94,6 +94,11 @@ INSERT INTO users (username, password, nickname)
 VALUES ($1, $2, $3)
 RETURNING *;
 
+-- name: UpdateUserPassword :one
+UPDATE users
+SET password = $2
+WHERE id = $1
+RETURNING *;
 
 -- 邮箱 ================================
 

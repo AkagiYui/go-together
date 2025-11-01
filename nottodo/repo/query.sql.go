@@ -543,3 +543,31 @@ func (q *Queries) UpdateTodo(ctx context.Context, arg UpdateTodoParams) error {
 	)
 	return err
 }
+
+const updateUserPassword = `-- name: UpdateUserPassword :one
+UPDATE users
+SET password = $2
+WHERE id = $1
+RETURNING id, username, password, nickname, register_at, is_validated, validated_at, created_at
+`
+
+type UpdateUserPasswordParams struct {
+	ID       int64  `json:"id"`
+	Password string `json:"password"`
+}
+
+func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUserPassword, arg.ID, arg.Password)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Password,
+		&i.Nickname,
+		&i.RegisterAt,
+		&i.IsValidated,
+		&i.ValidatedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}

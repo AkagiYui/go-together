@@ -15,3 +15,10 @@ func GetUserByUsername(username string) (User, error) {
 func GetUserById(id int64) (User, error) {
 	return Db.GetUser(Ctx, id)
 }
+
+func UpdateUserPassword(userId int64, newPassword string) (User, error) {
+	return Db.UpdateUserPassword(Ctx, UpdateUserPasswordParams{
+		ID:       userId,
+		Password: newPassword,
+	})
+}

@@ -10,10 +10,11 @@ import (
 )
 
 // 在开发模式下启动交互式终端，支持在服务器运行时执行指令
-// 当前支持命令：noop, adduser
 const help = `可用命令:
 noop                           占位命令，输出 ok
-adduser <username> <password>  新建用户`
+adduser <username> <password>  新建用户
+changepassword <username> <newpassword>  强制修改用户密码
+`
 
 func RunInteractiveShell(mode config.Mode) {
 	if mode != config.ModeDev {
@@ -38,8 +39,10 @@ func RunInteractiveShell(mode config.Mode) {
 				handleNoop()
 			case "adduser":
 				handleAddUser(parts[1:])
+			case "changepassword":
+				handleForceChangePassword(parts[1:])
 			default:
-				fmt.Println(help)
+				fmt.Print(help)
 			}
 		}
 	}()
