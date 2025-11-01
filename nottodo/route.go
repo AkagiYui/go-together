@@ -55,4 +55,12 @@ func registerV1Route(r *rest.RouteGroup) {
 		}
 	}
 
+	anonymousGroup := r.Group("")
+	{
+		userGroup := anonymousGroup.Group("/user")
+		{
+			userGroup.PostServ("/token", &user.GenerateTokenRequest{})
+		}
+	}
+
 }

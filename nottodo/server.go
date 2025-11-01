@@ -25,9 +25,21 @@ func init() {
 	// 设置全局中间件
 	s.UseFunc(middleware.CorsMiddleware(), middleware.TimeConsumeMiddleware())
 
-	// 设置HTTP状态码
+	// 统一封装响应体并设置HTTP状态码
 	s.UseFunc(func(ctx *rest.Context) {
 		ctx.Next()
+
+		// 检测 ctx.Status
+		if ctx.Status != nil {
+			if ctx.Status != model.ErrSuccess {
+				businessCodeObj := ctx.Status.(model.BusinessCode)
+				ctx.SetResult(model.Error(businessCodeObj))
+				ctx.SetStatusCode(model.HttpStatus(businessCodeObj))
+				return
+			}
+		}
+
+		// 如果已经是 GeneralResponse,则无需再次封装
 		if obj, ok := ctx.Result.(model.GeneralResponse); ok {
 			businessCodeObj := model.BusinessCodeFromInt(obj.Code)
 			ctx.SetStatusCode(model.HttpStatus(businessCodeObj))
