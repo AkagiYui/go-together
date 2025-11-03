@@ -1,3 +1,4 @@
+// Package command 提供交互式命令行功能
 package command
 
 import (
@@ -16,6 +17,7 @@ adduser <username> <password>  新建用户
 changepassword <username> <newpassword>  强制修改用户密码
 `
 
+// RunInteractiveShell 在开发模式下运行交互式命令行
 func RunInteractiveShell(mode config.Mode) {
 	if mode != config.ModeDev {
 		return

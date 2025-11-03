@@ -1,5 +1,6 @@
 package repo
 
+// CreateUser 创建用户
 func CreateUser(user User) (User, error) {
 	return Db.CreateUser(Ctx, CreateUserParams{
 		Username: user.Username,
@@ -8,17 +9,20 @@ func CreateUser(user User) (User, error) {
 	})
 }
 
+// GetUserByUsername 根据用户名获取用户
 func GetUserByUsername(username string) (User, error) {
 	return Db.GetUserByUsername(Ctx, username)
 }
 
-func GetUserById(id int64) (User, error) {
+// GetUserByID 根据ID获取用户
+func GetUserByID(id int64) (User, error) {
 	return Db.GetUser(Ctx, id)
 }
 
-func UpdateUserPassword(userId int64, newPassword string) (User, error) {
+// UpdateUserPassword 更新用户密码
+func UpdateUserPassword(userID int64, newPassword string) (User, error) {
 	return Db.UpdateUserPassword(Ctx, UpdateUserPasswordParams{
-		ID:       userId,
+		ID:       userID,
 		Password: newPassword,
 	})
 }

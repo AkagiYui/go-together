@@ -11,6 +11,7 @@ import (
 // 返回所有待办事项的列表
 type GetTodosRequest struct{}
 
+// Handle 处理获取所有待办事项的请求
 func (r GetTodosRequest) Handle(ctx *rest.Context) {
 	list, total, err := r.Do()
 	if err != nil {
@@ -20,6 +21,7 @@ func (r GetTodosRequest) Handle(ctx *rest.Context) {
 	ctx.SetResult(model.Success(model.Page(total, list)))
 }
 
+// Do 执行获取所有待办事项的业务逻辑
 func (GetTodosRequest) Do() ([]repo.Todo, int64, error) {
 	return repo.GetTodos()
 }
@@ -30,10 +32,12 @@ type GetTodoByIDRequest struct {
 	ID int64 `path:"id"`
 }
 
+// Validate 校验获取待办事项的请求参数
 func (r GetTodoByIDRequest) Validate() error {
 	return validation.PositiveInt64(r.ID, "ID")
 }
 
+// Handle 处理获取指定待办事项的请求
 func (r GetTodoByIDRequest) Handle(ctx *rest.Context) {
 	todo, err := r.Do()
 	if err != nil {
@@ -43,6 +47,7 @@ func (r GetTodoByIDRequest) Handle(ctx *rest.Context) {
 	ctx.SetResult(model.Success(todo))
 }
 
+// Do 执行获取指定待办事项的业务逻辑
 func (r GetTodoByIDRequest) Do() (repo.Todo, error) {
-	return repo.GetTodoById(r.ID)
+	return repo.GetTodoByID(r.ID)
 }

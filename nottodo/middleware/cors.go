@@ -6,6 +6,7 @@ import (
 	"github.com/akagiyui/go-together/rest"
 )
 
+// CorsMiddleware 跨域资源共享中间件
 func CorsMiddleware() rest.HandlerFunc {
 	return func(ctx *rest.Context) {
 		ctx.Response.Header("Access-Control-Allow-Origin", "*")

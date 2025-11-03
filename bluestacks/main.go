@@ -1,3 +1,4 @@
+// Package main 提供 BlueStacks 实例管理工具
 package main
 
 import (

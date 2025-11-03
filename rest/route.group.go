@@ -1,5 +1,6 @@
 package rest
 
+// RouteGroup 路由组
 type RouteGroup struct {
 	Factories      []HandlerFactory
 	BasePath       string
@@ -10,6 +11,7 @@ type RouteGroup struct {
 	server *Server
 }
 
+// NewRouteGroup 创建一个新的路由组
 func NewRouteGroup(server *Server, basePath string, preRunnerChain ...HandlerFunc) RouteGroup {
 	// 获取 preRunnerChain 的函数名称
 	preRunnerNames := make([]string, len(preRunnerChain))
@@ -34,7 +36,7 @@ func (g *RouteGroup) Group(basePath string, preRunnerChain ...HandlerFunc) *Rout
 	return &childGroup
 }
 
-// Use 为当前组添加前置 handler
+// UseFunc 为当前组添加前置函数处理器
 func (g *RouteGroup) UseFunc(handlers ...HandlerFunc) {
 	g.PreRunnerChain = append(g.PreRunnerChain, handlers...)
 	// 获取函数名称
@@ -43,6 +45,7 @@ func (g *RouteGroup) UseFunc(handlers ...HandlerFunc) {
 	}
 }
 
+// Use 为当前组添加前置处理器
 func (g *RouteGroup) Use(handlers ...HandlerInterface) {
 	// 复用与 Handle 相同的结构体 Handler 构造逻辑
 	runners, names, err := runnersFromHandlers(handlers...)

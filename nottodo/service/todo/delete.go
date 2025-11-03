@@ -13,10 +13,12 @@ type DeleteTodoRequest struct {
 	ID int64 `path:"id"`
 }
 
+// Validate 校验删除待办事项的请求参数
 func (r DeleteTodoRequest) Validate() error {
 	return validation.PositiveInt64(r.ID, "ID")
 }
 
+// Handle 处理删除待办事项的请求
 func (r DeleteTodoRequest) Handle(ctx *rest.Context) {
 	if err := r.Do(); err != nil {
 		ctx.SetResult(model.Error(model.ErrNotFound, "Todo not found"))
@@ -25,6 +27,7 @@ func (r DeleteTodoRequest) Handle(ctx *rest.Context) {
 	ctx.SetResult(model.Success(nil))
 }
 
+// Do 执行删除待办事项的业务逻辑
 func (r DeleteTodoRequest) Do() error {
 	return repo.DeleteTodo(r.ID)
 }

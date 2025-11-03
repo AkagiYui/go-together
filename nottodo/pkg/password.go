@@ -1,3 +1,4 @@
+// Package pkg 提供通用工具函数
 package pkg
 
 import (
@@ -10,6 +11,7 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
+// HashPassword 使用 Argon2id 算法对密码进行哈希
 func HashPassword(password string) (string, error) {
 	// 推荐的安全参数
 	params := &struct {
@@ -53,6 +55,7 @@ func HashPassword(password string) (string, error) {
 	return encodedHash, nil
 }
 
+// VerifyPassword 验证密码是否与哈希值匹配
 func VerifyPassword(password, encodedHash string) (bool, error) {
 	// 分割哈希字符串
 	parts := strings.Split(encodedHash, "$")

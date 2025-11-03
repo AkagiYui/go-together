@@ -1,3 +1,4 @@
+// Package cache 提供缓存操作的扩展功能
 package cache
 
 // GetInt64 获取一个 int64 值

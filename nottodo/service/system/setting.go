@@ -1,3 +1,4 @@
+// Package system 提供系统设置相关的服务
 package system
 
 import (
@@ -11,10 +12,13 @@ import (
 	"github.com/akagiyui/go-together/rest"
 )
 
+// IsAllowRegistrationCacheKey 是否允许注册的缓存键
 const IsAllowRegistrationCacheKey = "setting:is_allow_registration"
 
+// GetIsAllowRegistration 获取是否允许注册的设置
 type GetIsAllowRegistration struct{}
 
+// Handle 处理获取是否允许注册的请求
 func (r GetIsAllowRegistration) Handle(ctx *rest.Context) {
 	allowed, err := r.Do()
 	if err != nil {
@@ -24,6 +28,7 @@ func (r GetIsAllowRegistration) Handle(ctx *rest.Context) {
 	ctx.SetResult(model.Success(allowed))
 }
 
+// Do 执行获取是否允许注册的业务逻辑
 func (r GetIsAllowRegistration) Do() (allowed bool, err error) {
 	// read from cache
 	if err := cache.Get(IsAllowRegistrationCacheKey, &allowed); err == nil {
@@ -38,10 +43,12 @@ func (r GetIsAllowRegistration) Do() (allowed bool, err error) {
 	return repo.GetIsAllowRegistration()
 }
 
+// SetIsAllowRegistration 设置是否允许注册
 type SetIsAllowRegistration struct {
 	Allowed bool `json:"allowed"`
 }
 
+// Handle 处理设置是否允许注册的请求
 func (r SetIsAllowRegistration) Handle(ctx *rest.Context) {
 	if err := r.Do(); err != nil {
 		ctx.SetResult(model.InternalError(err))
@@ -50,6 +57,7 @@ func (r SetIsAllowRegistration) Handle(ctx *rest.Context) {
 	ctx.SetResult(model.Success(nil))
 }
 
+// Do 执行设置是否允许注册的业务逻辑
 func (r SetIsAllowRegistration) Do() error {
 	err := repo.SetIsAllowRegistration(r.Allowed)
 	if err != nil {

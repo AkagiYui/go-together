@@ -16,54 +16,54 @@ func Required(value string, fieldName string) error {
 }
 
 // MinLength 校验字符串最小长度
-func MinLength(value string, min int, fieldName string) error {
+func MinLength(value string, minLength int, fieldName string) error {
 	// 使用 rune 计数以正确处理中文等多字节字符
 	length := len([]rune(value))
-	if length < min {
-		return fmt.Errorf("%s长度不能少于%d个字符", fieldName, min)
+	if length < minLength {
+		return fmt.Errorf("%s长度不能少于%d个字符", fieldName, minLength)
 	}
 	return nil
 }
 
 // MaxLength 校验字符串最大长度
-func MaxLength(value string, max int, fieldName string) error {
+func MaxLength(value string, maxLength int, fieldName string) error {
 	// 使用 rune 计数以正确处理中文等多字节字符
 	length := len([]rune(value))
-	if length > max {
-		return fmt.Errorf("%s长度不能超过%d个字符", fieldName, max)
+	if length > maxLength {
+		return fmt.Errorf("%s长度不能超过%d个字符", fieldName, maxLength)
 	}
 	return nil
 }
 
 // LengthRange 校验字符串长度范围
-func LengthRange(value string, min int, max int, fieldName string) error {
+func LengthRange(value string, minLength int, maxLength int, fieldName string) error {
 	length := len([]rune(value))
-	if length < min || length > max {
-		return fmt.Errorf("%s长度必须在%d-%d个字符之间", fieldName, min, max)
+	if length < minLength || length > maxLength {
+		return fmt.Errorf("%s长度必须在%d-%d个字符之间", fieldName, minLength, maxLength)
 	}
 	return nil
 }
 
 // Range 校验数值范围
-func Range(value int, min int, max int, fieldName string) error {
-	if value < min || value > max {
-		return fmt.Errorf("%s必须在%d-%d之间", fieldName, min, max)
+func Range(value int, minValue int, maxValue int, fieldName string) error {
+	if value < minValue || value > maxValue {
+		return fmt.Errorf("%s必须在%d-%d之间", fieldName, minValue, maxValue)
 	}
 	return nil
 }
 
 // Min 校验数值最小值
-func Min(value int, min int, fieldName string) error {
-	if value < min {
-		return fmt.Errorf("%s不能小于%d", fieldName, min)
+func Min(value int, minValue int, fieldName string) error {
+	if value < minValue {
+		return fmt.Errorf("%s不能小于%d", fieldName, minValue)
 	}
 	return nil
 }
 
 // Max 校验数值最大值
-func Max(value int, max int, fieldName string) error {
-	if value > max {
-		return fmt.Errorf("%s不能大于%d", fieldName, max)
+func Max(value int, maxValue int, fieldName string) error {
+	if value > maxValue {
+		return fmt.Errorf("%s不能大于%d", fieldName, maxValue)
 	}
 	return nil
 }
@@ -92,10 +92,9 @@ func NonNegative(value int, fieldName string) error {
 	return nil
 }
 
-// Email 校验邮箱格式
-// 使用简化的正则表达式，符合大多数常见邮箱格式
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
 
+// Email 校验邮箱格式，使用简化的正则表达式，符合大多数常见邮箱格式
 func Email(value string, fieldName string) error {
 	if value == "" {
 		return nil // 空值不校验，如需校验空值请配合 Required 使用
@@ -163,9 +162,9 @@ func Match(value string, pattern string, fieldName string) error {
 	return nil
 }
 
-// Alpha 校验字符串只包含字母
 var alphaRegex = regexp.MustCompile(`^[a-zA-Z]+$`)
 
+// Alpha 校验字符串只包含字母
 func Alpha(value string, fieldName string) error {
 	if value == "" {
 		return nil
@@ -176,9 +175,9 @@ func Alpha(value string, fieldName string) error {
 	return nil
 }
 
-// AlphaNumeric 校验字符串只包含字母和数字
 var alphaNumericRegex = regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 
+// AlphaNumeric 校验字符串只包含字母和数字
 func AlphaNumeric(value string, fieldName string) error {
 	if value == "" {
 		return nil
@@ -189,9 +188,9 @@ func AlphaNumeric(value string, fieldName string) error {
 	return nil
 }
 
-// Numeric 校验字符串只包含数字
 var numericRegex = regexp.MustCompile(`^[0-9]+$`)
 
+// Numeric 校验字符串只包含数字
 func Numeric(value string, fieldName string) error {
 	if value == "" {
 		return nil
@@ -202,9 +201,9 @@ func Numeric(value string, fieldName string) error {
 	return nil
 }
 
-// Phone 校验中国大陆手机号格式
 var phoneRegex = regexp.MustCompile(`^1[3-9]\d{9}$`)
 
+// Phone 校验中国大陆手机号格式
 func Phone(value string, fieldName string) error {
 	if value == "" {
 		return nil
@@ -215,9 +214,9 @@ func Phone(value string, fieldName string) error {
 	return nil
 }
 
-// IDCard 校验中国大陆身份证号格式（简化版，只校验格式不校验校验位）
 var idCardRegex = regexp.MustCompile(`^[1-9]\d{5}(18|19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$`)
 
+// IDCard 校验中国大陆身份证号格式（简化版，只校验格式不校验校验位）
 func IDCard(value string, fieldName string) error {
 	if value == "" {
 		return nil

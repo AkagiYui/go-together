@@ -1,10 +1,14 @@
 package rest
 
+// HandlerFunc 处理函数类型
 type HandlerFunc func(*Context)
 
+// HandlerInterface 处理器接口
 type HandlerInterface interface {
 	Handle(*Context)
 }
+
+// ServiceHandlerInterface 服务处理器接口
 type ServiceHandlerInterface interface {
 	Do() (any, error)
 }
@@ -42,6 +46,7 @@ func (g *RouteGroup) Handle(path string, method string, handlerTypes ...HandlerI
 	return nil
 }
 
+// HandleServ 注册服务处理器到指定路径和方法
 func (g *RouteGroup) HandleServ(path string, method string, handlerTypes ...ServiceHandlerInterface) error {
 	factory := HandlerFactory{
 		Path:         path,
@@ -60,6 +65,7 @@ func (g *RouteGroup) HandleServ(path string, method string, handlerTypes ...Serv
 	return nil
 }
 
+// HandleFunc 注册函数处理器到指定路径和方法
 func (g *RouteGroup) HandleFunc(path string, method string, handlerFuncs ...HandlerFunc) {
 	factory := HandlerFactory{
 		Path:         path,
@@ -70,7 +76,7 @@ func (g *RouteGroup) HandleFunc(path string, method string, handlerFuncs ...Hand
 
 	// TODO 允许空方法列表，添加一个默认的空方法
 	if len(handlerFuncs) == 0 {
-		handlerFuncs = append(handlerFuncs, func(ctx *Context) {})
+		handlerFuncs = append(handlerFuncs, func(_ *Context) {})
 	}
 
 	factory.RunnerChain = handlerFuncs

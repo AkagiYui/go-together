@@ -1,3 +1,4 @@
+// Package rest 提供轻量级的 RESTful API 框架
 package rest
 
 import (
@@ -13,6 +14,7 @@ import (
 	"sync"
 )
 
+// Request HTTP 请求信息
 type Request struct {
 	Method   string // GET, POST, PUT, DELETE, ...
 	Endpoint string // 不包含 query string
@@ -34,6 +36,7 @@ type Request struct {
 	Body     []byte
 }
 
+// Response HTTP 响应信息
 type Response struct {
 	StatusCode int
 	Status     any
@@ -41,6 +44,7 @@ type Response struct {
 	Headers    http.Header
 }
 
+// Context HTTP 请求上下文
 type Context struct {
 	Request
 	Response
@@ -59,18 +63,22 @@ type Context struct {
 	disableInternalResponse bool
 }
 
+// SetStatus 设置响应状态
 func (c *Context) SetStatus(status any) {
 	c.Status = status
 }
 
+// SetStatusCode 设置 HTTP 状态码
 func (c *Response) SetStatusCode(code int) {
 	c.StatusCode = code
 }
 
+// SetResult 设置响应结果
 func (c *Response) SetResult(result any) {
 	c.Result = result
 }
 
+// Header 添加响应头
 func (c *Response) Header(key, value string) {
 	c.Headers.Add(key, value)
 }
@@ -92,11 +100,13 @@ func (c *Context) Set(key any, value any) {
 	c.Memory[key] = value
 }
 
+// Abort 中止后续处理器的执行
 func (c *Context) Abort() {
 	// Move index to the end to ensure subsequent Next does not execute remaining handlers
 	c.currentRunnerIndex = len(c.runnerChain)
 }
 
+// IsAborted 检查是否已中止
 func (c *Context) IsAborted() bool {
 	return c.currentRunnerIndex >= len(c.runnerChain)
 }
@@ -108,6 +118,7 @@ func (c *Context) Next() {
 	}
 }
 
+// NewContext 创建一个新的请求上下文
 func NewContext(r *http.Request, w *http.ResponseWriter, s *Server, runnerChain []HandlerFunc) *Context {
 	ctx := &Context{
 		Request: Request{
@@ -164,9 +175,9 @@ func NewContext(r *http.Request, w *http.ResponseWriter, s *Server, runnerChain 
 	}
 	switch contentType {
 	case "application/x-www-form-urlencoded":
-		ctx.BodyType = EncodeUrl
+		ctx.BodyType = EncodeURL
 	case "application/json":
-		ctx.BodyType = Json
+		ctx.BodyType = JSON
 	case "multipart/form-data":
 		ctx.BodyType = FormData
 	}
@@ -267,6 +278,7 @@ func (c *Context) FillBody() []byte {
 	return c.Body
 }
 
+// Stream 流式响应
 func (c *Context) Stream(step func(w io.Writer) bool) bool {
 	c.disableInternalResponse = true
 	c.Response.Headers.Add("Transfer-Encoding", "chunked")
@@ -296,10 +308,12 @@ func (c *Context) writeHeaders() {
 	}
 }
 
+// DisableInternalResponse 禁用内部响应处理
 func (c *Context) DisableInternalResponse() {
 	c.disableInternalResponse = true
 }
 
+// NewEmptyContext 创建一个空的上下文实例
 func NewEmptyContext() Context {
 	return Context{
 		disableInternalResponse: true,

@@ -17,6 +17,7 @@ type UpdateTodoRequest struct {
 	repo.Todo
 }
 
+// Validate 校验更新待办事项的请求参数
 func (r UpdateTodoRequest) Validate() error {
 	errs := make([]error, 0)
 	errs = append(errs, validation.PositiveInt64(r.ID, "ID"))
@@ -30,6 +31,7 @@ func (r UpdateTodoRequest) Validate() error {
 	return errors.Join(errs...)
 }
 
+// Handle 处理更新待办事项的请求
 func (r UpdateTodoRequest) Handle(ctx *rest.Context) {
 	err := r.Do()
 	if err != nil {
@@ -43,8 +45,9 @@ func (r UpdateTodoRequest) Handle(ctx *rest.Context) {
 	ctx.SetResult(model.Success(nil))
 }
 
+// Do 执行更新待办事项的业务逻辑
 func (r UpdateTodoRequest) Do() error {
-	oriTodo, err := repo.GetTodoById(r.ID)
+	oriTodo, err := repo.GetTodoByID(r.ID)
 	if err != nil {
 		return err
 	}

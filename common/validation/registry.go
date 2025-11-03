@@ -1,3 +1,4 @@
+// Package validation 提供了数据校验功能
 package validation
 
 import (

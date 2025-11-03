@@ -6,6 +6,7 @@ import (
 	"strconv"
 )
 
+// GetIsAllowRegistration 获取是否允许注册的设置
 func GetIsAllowRegistration() (bool, error) {
 	setting, err := Db.GetSetting(Ctx, "is_allow_registration")
 	if err != nil {
@@ -17,6 +18,7 @@ func GetIsAllowRegistration() (bool, error) {
 	return strconv.ParseBool(setting.Value)
 }
 
+// SetIsAllowRegistration 设置是否允许注册
 func SetIsAllowRegistration(allowed bool) error {
 	_, err := Db.SetSetting(Ctx, SetSettingParams{
 		Key:   "is_allow_registration",

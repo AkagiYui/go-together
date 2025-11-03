@@ -10,11 +10,16 @@ import (
 type BusinessCode error
 
 var (
-	ErrSuccess       BusinessCode = errors.New("success")        // 成功
-	ErrInputError    BusinessCode = errors.New("input error")    // 输入错误(参数校验失败等)
-	ErrNotFound      BusinessCode = errors.New("not found")      // 未找到
-	ErrUnauthorized  BusinessCode = errors.New("unauthorized")   // 未授权
-	ErrInternalError BusinessCode = errors.New("internal error") // 服务器内部错误
+	// ErrSuccess 成功
+	ErrSuccess BusinessCode = errors.New("success")
+	// ErrInputError 输入错误(参数校验失败等)
+	ErrInputError BusinessCode = errors.New("input error")
+	// ErrNotFound 未找到
+	ErrNotFound BusinessCode = errors.New("not found")
+	// ErrUnauthorized 未授权
+	ErrUnauthorized BusinessCode = errors.New("unauthorized")
+	// ErrInternalError 服务器内部错误
+	ErrInternalError BusinessCode = errors.New("internal error")
 )
 
 var businessCodeMap = map[BusinessCode]int{
@@ -32,6 +37,7 @@ func init() {
 	}
 }
 
+// BusinessCodeFromInt 从整数转换为业务状态码
 func BusinessCodeFromInt(code int) BusinessCode {
 	if businessCode, ok := businessCodeReverseMap[code]; ok {
 		return businessCode
@@ -48,8 +54,8 @@ var statusMap = map[BusinessCode]int{
 	ErrInternalError: http.StatusInternalServerError,
 }
 
-// HttpStatus 将业务错误码转换为 HTTP 状态码
-func HttpStatus(code BusinessCode) int {
+// HTTPStatus 将业务错误码转换为 HTTP 状态码
+func HTTPStatus(code BusinessCode) int {
 	if status, ok := statusMap[code]; ok {
 		return status
 	}

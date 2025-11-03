@@ -1,3 +1,4 @@
+// Package middleware 提供HTTP中间件功能
 package middleware
 
 import (
@@ -15,11 +16,11 @@ func AuthMiddleware() rest.HandlerFunc {
 		// 验证 token
 		rawToken := ctx.Request.Header.Get("Authorization")
 		if token, ok := strings.CutPrefix(rawToken, "Bearer "); ok {
-			userId, err := cache.GetInt64("auth_token:" + token)
+			userID, err := cache.GetInt64("auth_token:" + token)
 			if err != nil {
 				return
 			}
-			user, err := repo.GetUserById(userId)
+			user, err := repo.GetUserByID(userID)
 			if err != nil {
 				return
 			}

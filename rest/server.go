@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// Server HTTP 服务器
 type Server struct {
 	RouteGroup       // 用于为用户组织路由
 	Debug            bool
@@ -24,6 +25,7 @@ type Server struct {
 	validationErrorHandler func(*Context, error)
 }
 
+// NewServer 创建一个新的服务器实例
 func NewServer() *Server {
 	server := &Server{
 		RouteGroup:       NewRouteGroup(nil, ""),
@@ -82,6 +84,7 @@ func flattenFactories(group *RouteGroup, preBasePath string, prePreRunnerChain [
 	return factories
 }
 
+// Run 启动 HTTP 服务器
 func (s *Server) Run(addr string) error {
 	mux := http.NewServeMux()
 	registerRouteGroup(mux, &s.RouteGroup, s) // 处理所有注册的 handler

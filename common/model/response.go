@@ -11,7 +11,7 @@ type GeneralResponse struct {
 
 // Success 返回成功响应
 func Success(datas ...any) GeneralResponse {
-	var data any = nil
+	var data any
 	if len(datas) > 1 {
 		data = datas
 	} else if len(datas) == 1 {

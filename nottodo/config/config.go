@@ -1,3 +1,4 @@
+// Package config 提供应用配置管理功能
 package config
 
 import (
@@ -18,8 +19,10 @@ import (
 type Mode string
 
 const (
+	// ModeProd 生产模式
 	ModeProd Mode = "prod"
-	ModeDev  Mode = "dev"
+	// ModeDev 开发模式
+	ModeDev Mode = "dev"
 )
 
 func (m Mode) String() string {

@@ -12,15 +12,17 @@ import (
 )
 
 var (
+	// Db 数据库查询实例
 	Db   *Queries
 	conn *pgx.Conn
-	Ctx  = context.Background()
+	// Ctx 全局上下文
+	Ctx = context.Background()
 )
 
 // sqlLogger 实现 pgx 的日志接口
 type sqlLogger struct{}
 
-func (l *sqlLogger) Log(ctx context.Context, level tracelog.LogLevel, msg string, data map[string]any) {
+func (l *sqlLogger) Log(_ context.Context, _ tracelog.LogLevel, _ string, data map[string]any) {
 	// 只打印 SQL 语句相关的日志
 	if sql, ok := data["sql"]; ok {
 		args := data["args"]

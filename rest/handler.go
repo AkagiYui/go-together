@@ -11,16 +11,21 @@ import (
 	"github.com/akagiyui/go-together/common/cache"
 )
 
+// BodyType 请求体类型
 type BodyType int
 
 const (
+	// Nil 空请求体
 	Nil BodyType = iota
-	EncodeUrl
-	Json
+	// EncodeURL URL编码格式
+	EncodeURL
+	// JSON JSON格式
+	JSON
+	// FormData 表单数据格式
 	FormData
 )
 
-var structInfoCache = cache.NewCacheMap[reflect.Type, *structInfo]()
+var structInfoCache = cache.NewMap[reflect.Type, *structInfo]()
 
 type structInfo struct {
 	fields []fieldInfo
@@ -115,7 +120,7 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, []str
 			}
 
 			// 解析 query/path/header 参数
-			needParseJsonBody, err := parseParams(ctx, handlerInterface)
+			needParseJSONBody, err := parseParams(ctx, handlerInterface)
 			if err != nil {
 				ctx.SetStatus(http.StatusBadRequest)
 				ctx.SetResult("Failed to parse parameters: " + err.Error())
@@ -123,7 +128,7 @@ func runnersFromHandlers(handlerTypes ...HandlerInterface) ([]HandlerFunc, []str
 			}
 
 			// 如果需要解析请求体,尝试解析 JSON 到结构体
-			if needParseJsonBody && ctx.BodyType == Json && ctx.ContentLength > 0 {
+			if needParseJSONBody && ctx.BodyType == JSON && ctx.ContentLength > 0 {
 				if err := json.Unmarshal(ctx.FillBody(), handlerInterface); err != nil {
 					ctx.SetStatusCode(http.StatusBadRequest)
 					ctx.SetResult("Invalid JSON format: " + err.Error())
@@ -186,7 +191,7 @@ func runnersFromServiceHandlers(handlerTypes ...ServiceHandlerInterface) ([]Hand
 			}
 
 			// 解析 query/path/header 参数
-			needParseJsonBody, err := parseParams(ctx, handlerInterface)
+			needParseJSONBody, err := parseParams(ctx, handlerInterface)
 			if err != nil {
 				ctx.SetStatus(http.StatusBadRequest)
 				ctx.SetResult("Failed to parse parameters: " + err.Error())
@@ -194,7 +199,7 @@ func runnersFromServiceHandlers(handlerTypes ...ServiceHandlerInterface) ([]Hand
 			}
 
 			// 如果需要解析请求体,尝试解析 JSON 到结构体
-			if needParseJsonBody && ctx.BodyType == Json && ctx.ContentLength > 0 {
+			if needParseJSONBody && ctx.BodyType == JSON && ctx.ContentLength > 0 {
 				if err := json.Unmarshal(ctx.FillBody(), handlerInterface); err != nil {
 					ctx.SetStatusCode(http.StatusBadRequest)
 					ctx.SetResult("Invalid JSON format: " + err.Error())
@@ -230,7 +235,7 @@ func runnersFromServiceHandlers(handlerTypes ...ServiceHandlerInterface) ([]Hand
 }
 
 // parseParams 解析query参数和path参数和header参数到结构体字段
-func parseParams(ctx *Context, handlerInterface interface{}) (needParseJsonBody bool, err error) {
+func parseParams(ctx *Context, handlerInterface interface{}) (needParseJSONBody bool, err error) {
 	handlerValue := reflect.ValueOf(handlerInterface)
 	if handlerValue.Kind() == reflect.Ptr {
 		handlerValue = handlerValue.Elem()
@@ -239,7 +244,7 @@ func parseParams(ctx *Context, handlerInterface interface{}) (needParseJsonBody 
 }
 
 // 优化后的 parseStructFields
-func parseStructFields(structValue reflect.Value, ctx *Context) (needParseJsonBody bool, err error) {
+func parseStructFields(structValue reflect.Value, ctx *Context) (needParseJSONBody bool, err error) {
 	if structValue.Kind() == reflect.Ptr {
 		if structValue.IsNil() {
 			return false, nil
@@ -292,13 +297,13 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseJsonBo
 				}
 			}
 		case "json":
-			if ctx.BodyType == Json {
+			if ctx.BodyType == JSON {
 				// 交给 json.Unmarshal 处理
-				needParseJsonBody = true
+				needParseJSONBody = true
 			}
 		case "form":
 			switch ctx.BodyType {
-			case EncodeUrl:
+			case EncodeURL:
 				// 解析表单
 				ctx.FillBody()
 				ctx.OriginalRequest.ParseForm()
@@ -363,11 +368,11 @@ func parseStructFields(structValue reflect.Value, ctx *Context) (needParseJsonBo
 		}
 
 		if fieldType.Kind() == reflect.Struct {
-			childNeedParseJsonBody, childErr := parseStructFields(fieldValue, ctx)
+			childNeedParseJSONBody, childErr := parseStructFields(fieldValue, ctx)
 			if childErr != nil {
-				return needParseJsonBody, childErr
+				return needParseJSONBody, childErr
 			}
-			needParseJsonBody = needParseJsonBody || childNeedParseJsonBody
+			needParseJSONBody = needParseJSONBody || childNeedParseJSONBody
 		}
 	}
 

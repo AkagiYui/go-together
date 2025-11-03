@@ -1,3 +1,4 @@
+// Package user 提供用户认证相关的服务
 package user
 
 import (
@@ -11,15 +12,18 @@ import (
 	"github.com/akagiyui/go-together/nottodo/repo"
 )
 
+// GenerateTokenRequest 生成令牌请求
 type GenerateTokenRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
+// GenerateTokenResponse 生成令牌响应
 type GenerateTokenResponse struct {
 	Token string `json:"token"`
 }
 
+// Do 执行生成令牌的业务逻辑
 func (r GenerateTokenRequest) Do() (any, error) {
 	// 校验用户名和密码
 	user, err := repo.GetUserByUsername(r.Username)

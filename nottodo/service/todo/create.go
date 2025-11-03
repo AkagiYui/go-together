@@ -1,3 +1,4 @@
+// Package todo 提供待办事项相关的服务
 package todo
 
 import (
@@ -15,6 +16,7 @@ type CreateTodoRequest struct {
 	repo.Todo
 }
 
+// Validate 校验创建待办事项的请求参数
 func (r CreateTodoRequest) Validate() error {
 	return errors.Join(
 		validation.Required(r.Title, "标题"),
@@ -23,6 +25,7 @@ func (r CreateTodoRequest) Validate() error {
 	)
 }
 
+// Handle 处理创建待办事项的请求
 func (r CreateTodoRequest) Handle(ctx *rest.Context) {
 	newTodo, err := r.Do()
 	if err != nil {
@@ -32,6 +35,7 @@ func (r CreateTodoRequest) Handle(ctx *rest.Context) {
 	ctx.SetResult(model.Success(newTodo))
 }
 
+// Do 执行创建待办事项的业务逻辑
 func (r CreateTodoRequest) Do() (repo.Todo, error) {
 	return repo.CreateTodo(repo.Todo{
 		Title:       r.Title,

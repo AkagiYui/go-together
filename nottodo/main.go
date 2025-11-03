@@ -1,3 +1,4 @@
+// Package main 是 NotToDo 应用的入口
 package main
 
 import (
@@ -65,7 +66,7 @@ func checkTimeDiff(tollerance int64) error {
 
 	type result struct {
 		Timestamp int    `json:"t"`
-		Ip        string `json:"ip"`
+		IP        string `json:"ip"`
 	}
 
 	var res1 result

@@ -45,7 +45,7 @@ func handleForceChangePassword(args []string) {
 	}
 
 	// 2. 强制修改密码
-	req := usersvc.ForceChangePassword{UserId: user.ID, NewPassword: newPassword}
+	req := usersvc.ForceChangePassword{UserID: user.ID, NewPassword: newPassword}
 	_, err = req.Do()
 	if err != nil {
 		fmt.Println("错误: ", err)
