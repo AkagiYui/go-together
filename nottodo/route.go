@@ -12,13 +12,7 @@ import (
 	"github.com/akagiyui/go-together/rest"
 )
 
-const comment = `🚀 Server starting on http://LISTEN
-📚 API Documentation:
-GET    /v1/todos        - 获取所有Todo
-GET    /v1/todos/{id}   - 获取指定ID的Todo
-POST   /v1/todos        - 创建Todo
-PUT    /v1/todos/{id}   - 更新指定ID的Todo
-DELETE /v1/todos/{id}   - 删除指定ID的Todo`
+const comment = `🚀 Server starting on http://LISTEN`
 
 func registerRoute() {
 	cfg := config.GlobalConfig
