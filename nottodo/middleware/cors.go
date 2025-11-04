@@ -7,9 +7,9 @@ import (
 )
 
 // CorsMiddleware 跨域资源共享中间件
-func CorsMiddleware() rest.HandlerFunc {
+func CorsMiddleware(allowOrigin string) rest.HandlerFunc {
 	return func(ctx *rest.Context) {
-		ctx.Response.Header("Access-Control-Allow-Origin", "*")
+		ctx.Response.Header("Access-Control-Allow-Origin", allowOrigin)
 		ctx.Response.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		ctx.Response.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		ctx.Response.Header("Access-Control-Allow-Credentials", "true")

@@ -46,10 +46,11 @@ func ParseMode(s string) Mode {
 // Config 应用配置，仅从环境变量读取
 // 目前 DSN 可为空（使用内存数据库），MODE 为可选，默认 prod
 type Config struct {
-	DSN  string `validate:"required"`
-	Mode Mode   `validate:"oneof=prod dev"`
-	Port string `validate:"required"`
-	Host string `validate:"required"`
+	DSN         string `validate:"required"`
+	Mode        Mode   `validate:"oneof=prod dev"`
+	Port        string `validate:"required"`
+	Host        string `validate:"required"`
+	AllowOrigin string
 }
 
 // Load 尝试先加载 .env 文件，再从环境变量读取配置
@@ -57,10 +58,11 @@ func Load() (Config, error) {
 	_ = loadDotenv(".env")
 
 	cfg := Config{
-		DSN:  getEnv("DSN", "", true),
-		Mode: ParseMode(getEnv("MODE", "prod", true)),
-		Port: getEnv("PORT", "8082", true),
-		Host: getEnv("HOST", "0.0.0.0", true),
+		DSN:         getEnv("DSN", "", true),
+		Mode:        ParseMode(getEnv("MODE", "prod", true)),
+		Port:        getEnv("PORT", "8082", true),
+		Host:        getEnv("HOST", "0.0.0.0", true),
+		AllowOrigin: getEnv("ALLOW_ORIGIN", "", true),
 	}
 	return cfg, validation.ValidateStruct(cfg)
 }

@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/akagiyui/go-together/common/model"
+	"github.com/akagiyui/go-together/common/object"
 	"github.com/akagiyui/go-together/nottodo/config"
 	"github.com/akagiyui/go-together/nottodo/middleware"
 	"github.com/akagiyui/go-together/rest"
@@ -23,7 +24,10 @@ func init() {
 	})
 
 	// 设置全局中间件
-	s.UseFunc(middleware.CorsMiddleware(), middleware.TimeConsumeMiddleware())
+	if object.HasText(cfg.AllowOrigin) {
+		s.UseFunc(middleware.CorsMiddleware(cfg.AllowOrigin))
+	}
+	s.UseFunc(middleware.TimeConsumeMiddleware())
 
 	// 统一封装响应体并设置HTTP状态码
 	s.UseFunc(func(ctx *rest.Context) {
