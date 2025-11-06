@@ -72,7 +72,7 @@ func init() {
 
 	// 服务健康检查
 	s.GetFunc("/healthz", func(ctx *rest.Context) {
-		ctx.SetResult(model.Success())
+		ctx.SetResult(model.Success(GetBuildInfo()))
 	})
 
 	// 注册业务路由

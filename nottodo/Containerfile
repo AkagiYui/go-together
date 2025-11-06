@@ -18,14 +18,24 @@ RUN go mod download
 
 # 复制源代码
 WORKDIR /build
+COPY .git/ .git/
 COPY nottodo/ nottodo/
 COPY rest/ rest/
 COPY common/ common/
 
 # 构建二进制文件
 WORKDIR /build/nottodo
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH:-amd64} \
-    go build -a -installsuffix cgo -ldflags="-w -s" -o /nottodo .
+RUN set -ex && \
+    GIT_COMMIT_HASH=$(git rev-parse HEAD 2>/dev/null || echo "unknown") && \
+    BUILD_TIME=$(date -u '+%Y-%m-%d %H:%M:%S UTC') && \
+    COMMIT_TIME=$(git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M:%S UTC' 2>/dev/null || echo "unknown") && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH:-amd64} \
+    go build -a -installsuffix cgo \
+    -ldflags="-w -s \
+    -X 'main.GitCommitHash=${GIT_COMMIT_HASH}' \
+    -X 'main.BuildTime=${BUILD_TIME}' \
+    -X 'main.CommitTime=${COMMIT_TIME}'" \
+    -o /nottodo .
 
 # 第二阶段：运行阶段
 FROM scratch
