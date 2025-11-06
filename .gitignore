@@ -4,6 +4,8 @@ example*
 __debug*
 *.png
 .env
+tmp
+.air*
 
 # ai
 .zed
