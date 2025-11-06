@@ -1,0 +1,114 @@
+name: Build Docker Deploy Webhook
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - 'docker-deploy-webhook/**'
+      - '.github/workflows/webhook-build.yml'
+    tags:
+      - 'webhook-v*'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'docker-deploy-webhook/**'
+
+jobs:
+  build:
+    name: Build Multi-Platform Binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    strategy:
+      matrix:
+        include:
+          # Linux
+          - goos: linux
+            goarch: amd64
+            output: webhook-server-linux-amd64
+          - goos: linux
+            goarch: arm64
+            output: webhook-server-linux-arm64
+          - goos: linux
+            goarch: arm
+            goarm: 7
+            output: webhook-server-linux-armv7
+          - goos: linux
+            goarch: arm
+            goarm: 6
+            output: webhook-server-linux-armv6
+          
+          # Windows
+          - goos: windows
+            goarch: amd64
+            output: webhook-server-windows-amd64.exe
+          - goos: windows
+            goarch: arm64
+            output: webhook-server-windows-arm64.exe
+          
+          # macOS
+          - goos: darwin
+            goarch: amd64
+            output: webhook-server-darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            output: webhook-server-darwin-arm64
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'docker-deploy-webhook/go.mod'
+      
+      - name: Build binary for ${{ matrix.goos }}/${{ matrix.goarch }}
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
+        run: |
+          cd docker-deploy-webhook
+          go build -v -trimpath -ldflags="-s -w" -o ${{ matrix.output }} .
+          ls -lh ${{ matrix.output }}
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.output }}
+          path: docker-deploy-webhook/${{ matrix.output }}
+          retention-days: 30
+  
+  # 创建 release 时自动上传所有二进制文件
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    if: startsWith(github.ref, 'refs/tags/webhook-v')
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Display structure of downloaded files
+        run: ls -R artifacts
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

@@ -1,8 +1,9 @@
 go 1.24.5
 
 use (
+	./bluestacks
 	./common
+	./docker-deploy-webhook
 	./nottodo
 	./rest
-	./bluestacks
 )
