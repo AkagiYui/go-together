@@ -5,9 +5,6 @@ on:
     branches:
       - master
     paths:
-      # 根目录下的文件（不包括子目录）
-      - 'go.work'
-      - 'go.work.sum'
       # nottodo 项目目录
       - 'nottodo/**'
       # nottodo 依赖的项目目录
