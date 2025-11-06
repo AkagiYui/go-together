@@ -12,9 +12,9 @@ var (
 
 // BuildInfo 构建信息结构体
 type BuildInfo struct {
-	GitCommitHash string `json:"git_commit_hash"`
-	BuildTime     string `json:"build_time"`
-	CommitTime    string `json:"commit_time"`
+	GitCommitHash string `json:"gitCommitHash"`
+	BuildTime     string `json:"buildTime"`
+	CommitTime    string `json:"commitTime"`
 }
 
 // GetBuildInfo 获取构建信息
@@ -25,4 +25,3 @@ func GetBuildInfo() BuildInfo {
 		CommitTime:    CommitTime,
 	}
 }
-
