@@ -5,6 +5,7 @@ on:
     branches:
       - master
     paths:
+      - '.github/workflows/nottodo-build.yml'
       # nottodo 项目目录
       - 'nottodo/**'
       # nottodo 依赖的项目目录
@@ -12,8 +13,9 @@ on:
       - 'common/**'
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/nottodo
+  REGISTRY_GHCR: ghcr.io
+  REGISTRY_DEPLOY: ${{ secrets.REGISTRY_DEPLOY }}
+  IMAGE_NAME: nottodo
 
 jobs:
   build-and-push:
@@ -35,28 +37,59 @@ jobs:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ${{ env.REGISTRY_GHCR }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for Docker
-        id: meta
+      - name: Log in to Deploy Registry
+        uses: docker/login-action@v3
+        continue-on-error: true
+        with:
+          registry: ${{ env.REGISTRY_DEPLOY }}
+          username: ${{ secrets.REGISTRY_DEPLOY_USERNAME }}
+          password: ${{ secrets.REGISTRY_DEPLOY_TOKEN }}
+
+      - name: Extract metadata for Docker (GHCR)
+        id: meta-ghcr
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_NAME }}
+          images: |
+            ${{ env.REGISTRY_GHCR }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
             type=sha,prefix=,format=long
 
-      - name: Build and push Docker image
+      - name: Extract metadata for Docker (Deploy Registry)
+        id: meta-deploy
+        continue-on-error: true
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY_DEPLOY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=,format=long
+
+      - name: Build and push Docker image to GHCR
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./nottodo/Containerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-ghcr.outputs.tags }}
+          labels: ${{ steps.meta-ghcr.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Build and push Docker image to Deploy Registry
+        continue-on-error: true
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./nottodo/Containerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta-deploy.outputs.tags }}
+          labels: ${{ steps.meta-deploy.outputs.labels }}
+          cache-from: type=gha
