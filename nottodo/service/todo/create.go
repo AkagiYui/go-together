@@ -18,10 +18,16 @@ type CreateTodoRequest struct {
 
 // Validate 校验创建待办事项的请求参数
 func (r CreateTodoRequest) Validate() error {
+	// 处理可空的 Description 字段
+	description := ""
+	if r.Description != nil {
+		description = *r.Description
+	}
+
 	return errors.Join(
 		validation.Required(r.Title, "标题"),
 		validation.MaxLength(r.Title, 100, "标题"),
-		validation.MaxLength(r.Description.String, 500, "描述"),
+		validation.MaxLength(description, 500, "描述"),
 	)
 }
 

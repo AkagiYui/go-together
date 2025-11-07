@@ -9,7 +9,6 @@ import (
 	"github.com/akagiyui/go-together/nottodo/pkg"
 	"github.com/akagiyui/go-together/nottodo/repo"
 	"github.com/akagiyui/go-together/rest"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // CreateUserRequest 创建用户请求
@@ -57,9 +56,21 @@ func (r CreateUserRequest) Do() (repo.User, error) {
 	}
 
 	r.Password = password
-	return repo.CreateUser(repo.User{
+
+	// 处理可空的 Nickname 字段
+	var nickname *string
+	if r.Nickname != "" {
+		nickname = &r.Nickname
+	}
+
+	user, err := repo.CreateUser(repo.User{
 		Username: r.Username,
 		Password: r.Password,
-		Nickname: pgtype.Text{String: r.Nickname, Valid: r.Nickname != ""},
+		Nickname: nickname,
 	})
+
+	// RegisterAt 设置为 CreatedAt
+	user.RegisterAt = &user.CreatedAt
+
+	return user, err
 }

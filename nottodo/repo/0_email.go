@@ -1,41 +1,61 @@
 // Package repo 提供数据库访问层功能
 package repo
 
+import "time"
+
+// Email 邮箱表
+type Email struct {
+	ID         int64     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`                                            // ID
+	UserID     int64     `gorm:"column:user_id;not null;index:idx_emails_user_id" json:"user_id"`                         // 用户ID
+	Email      string    `gorm:"column:email;type:varchar(255);uniqueIndex:idx_emails_email;not null" json:"email"`       // 邮箱地址
+	IsPrimary  bool      `gorm:"column:is_primary;not null;default:false" json:"is_primary"`                              // 是否为主要邮箱
+	IsVerified bool      `gorm:"column:is_verified;not null;default:false" json:"is_verified"`                            // 是否已验证
+	CreatedAt  time.Time `gorm:"column:created_at;type:timestamptz;not null;default:current_timestamp" json:"created_at"` // 创建时间（非空）
+}
+
+// TableName 指定表名
+func (Email) TableName() string {
+	return "emails"
+}
+
 // CreateEmail 创建邮箱记录
 func CreateEmail(email Email) (Email, error) {
-	return Db.CreateEmail(Ctx, CreateEmailParams{
-		UserID:     email.UserID,
-		Email:      email.Email,
-		IsPrimary:  email.IsPrimary,
-		IsVerified: email.IsVerified,
-	})
+	result := DB.Create(&email)
+	return email, result.Error
 }
 
 // GetEmailByID 根据ID获取邮箱记录
 func GetEmailByID(id int64) (Email, error) {
-	return Db.GetEmail(Ctx, id)
+	var email Email
+	result := DB.First(&email, id)
+	return email, result.Error
 }
 
 // GetEmailByAddress 根据邮箱地址获取邮箱记录
-func GetEmailByAddress(email string) (Email, error) {
-	return Db.GetEmailByAddress(Ctx, email)
+func GetEmailByAddress(emailAddr string) (Email, error) {
+	var email Email
+	result := DB.Where("email = ?", emailAddr).First(&email)
+	return email, result.Error
 }
 
 // ListEmailsByUserID 根据用户ID获取邮箱列表
 func ListEmailsByUserID(userID int64) ([]Email, error) {
-	return Db.ListEmailsByUserId(Ctx, userID)
+	var emails []Email
+	result := DB.Where("user_id = ?", userID).Find(&emails)
+	return emails, result.Error
 }
 
 // ListEmails 获取所有邮箱列表
 func ListEmails() ([]Email, error) {
-	return Db.ListEmails(Ctx)
+	var emails []Email
+	result := DB.Find(&emails)
+	return emails, result.Error
 }
 
 // UpdateEmail 更新邮箱记录
 func UpdateEmail(email Email) error {
-	return Db.UpdateEmail(Ctx, UpdateEmailParams{
-		ID:         email.ID,
-		IsPrimary:  email.IsPrimary,
-		IsVerified: email.IsVerified,
-	})
+	return DB.Model(&Email{}).Where("id = ?", email.ID).Updates(map[string]any{
+		"is_primary":  email.IsPrimary,
+		"is_verified": email.IsVerified,
+	}).Error
 }

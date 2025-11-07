@@ -21,7 +21,11 @@ type UpdateTodoRequest struct {
 func (r UpdateTodoRequest) Validate() error {
 	errs := make([]error, 0)
 	errs = append(errs, validation.PositiveInt64(r.ID, "ID"))
-	errs = append(errs, validation.MaxLength(r.Description.String, 500, "描述"))
+
+	// 处理可空的 Description 字段
+	if r.Description != nil {
+		errs = append(errs, validation.MaxLength(*r.Description, 500, "描述"))
+	}
 
 	// 校验标题（如果提供）
 	if r.Title != "" {
@@ -55,7 +59,8 @@ func (r UpdateTodoRequest) Do() error {
 	if r.Todo.Title != "" {
 		oriTodo.Title = r.Todo.Title
 	}
-	if r.Todo.Description.String != "" {
+	// 处理可空的 Description 字段
+	if r.Todo.Description != nil && *r.Todo.Description != "" {
 		oriTodo.Description = r.Todo.Description
 	}
 
