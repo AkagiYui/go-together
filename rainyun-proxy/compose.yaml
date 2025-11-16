@@ -1,0 +1,14 @@
+services:
+  application:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "28183:28183"
+    healthcheck:
+      test: ["CMD", "/workspace/app", "-healthcheck"]
+      interval: 60s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
