@@ -2,7 +2,7 @@ services:
   application:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Containerfile
     restart: always
     ports:
       - "28183:28183"
