@@ -24,11 +24,12 @@ type UDPMessage struct {
 }
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
+	CheckOrigin: func(_ *http.Request) bool {
 		return true // 允许所有跨域请求
 	},
 }
 
+// RegisterUDPClientRoutes 注册 UDP 客户端 WebSocket 连接的路由。
 func RegisterUDPClientRoutes(r *gin.Engine) {
 	r.GET("/udp/:host/:port/ws", handleUDPWebSocket)
 }
@@ -38,6 +39,10 @@ func handleUDPWebSocket(c *gin.Context) {
 	// 获取UDP地址和端口参数
 	udpHost := c.Param("host")
 	udpPort, err := strconv.Atoi(c.Param("port"))
+	if err != nil {
+		log.Printf("Invalid port number: %v", err)
+		return
+	}
 
 	// 升级HTTP连接为WebSocket
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)

@@ -21,6 +21,7 @@ type TCPMessage struct {
 	Message string `json:"message"`
 }
 
+// RegisterTCPClientRoutes 注册 TCP 客户端 WebSocket 连接的路由。
 func RegisterTCPClientRoutes(r *gin.Engine) {
 	r.GET("/tcp/:host/:port/ws", handleTCPWebSocket)
 }

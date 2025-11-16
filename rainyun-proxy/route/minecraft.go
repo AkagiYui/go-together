@@ -1,3 +1,4 @@
+// Package route 提供各种代理服务的 HTTP 路由处理器。
 package route
 
 import (
@@ -10,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// RegisterMinecraftRoutes 注册 Minecraft 服务器状态查询的路由。
 func RegisterMinecraftRoutes(r *gin.Engine) {
 	r.GET("/api/mcbe/:address", handleMCBE)
 	r.GET("/api/mcje/:address", handleMCJE)

@@ -10,7 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterRainApiProxyRoutes(r *gin.Engine) {
+// RegisterRainAPIProxyRoutes 注册用于代理雨云 API 请求的路由。
+func RegisterRainAPIProxyRoutes(r *gin.Engine) {
 	target := "https://api.v2.rainyun.com"
 	targetURL, err := url.Parse(target)
 	if err != nil {

@@ -20,6 +20,7 @@ type RCONMessage struct {
 	Message string `json:"message"` // 消息内容
 }
 
+// RegisterRCONClientRoutes 注册 RCON 客户端 WebSocket 连接的路由。
 func RegisterRCONClientRoutes(r *gin.Engine) {
 	r.GET("/rcon/:host/:port/ws", handleRCONWebSocket)
 }

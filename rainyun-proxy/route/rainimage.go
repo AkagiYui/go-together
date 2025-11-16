@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// RegisterRainImageProxyRoutes 注册用于代理雨云图片请求的路由。
 func RegisterRainImageProxyRoutes(r *gin.Engine) {
 	target := "https://cn-nb1.rains3.com"
 	targetURL, err := url.Parse(target)

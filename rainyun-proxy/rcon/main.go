@@ -1,3 +1,4 @@
+// Package rcon 提供 RCON (远程控制台) 客户端功能，用于连接游戏服务器。
 package rcon
 
 import (
@@ -9,7 +10,8 @@ import (
 	"time"
 )
 
-type RCONConnection struct {
+// Connection 表示到远程服务器的 RCON 连接。
+type Connection struct {
 	conn       net.Conn
 	ip         string
 	port       int
@@ -18,8 +20,9 @@ type RCONConnection struct {
 	retryDelay int
 }
 
-func NewRCONConnection(ip string, port int, password string, retryCount int, retryDelay int) *RCONConnection {
-	connection := &RCONConnection{
+// NewRCONConnection 创建一个新的 RCON 连接实例，使用指定的参数。
+func NewRCONConnection(ip string, port int, password string, retryCount int, retryDelay int) *Connection {
+	connection := &Connection{
 		ip:         ip,
 		port:       port,
 		password:   password,
@@ -29,9 +32,10 @@ func NewRCONConnection(ip string, port int, password string, retryCount int, ret
 	return connection
 }
 
-func (c *RCONConnection) Connect() error {
+// Connect 建立到 RCON 服务器的连接并执行身份验证。
+func (c *Connection) Connect() error {
 	c.Close()
-	address := fmt.Sprintf("%s:%d", c.ip, c.port)
+	address := net.JoinHostPort(c.ip, fmt.Sprintf("%d", c.port))
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		return err
@@ -44,14 +48,14 @@ func (c *RCONConnection) Connect() error {
 	return nil
 }
 
-func (c *RCONConnection) auth() (string, error) {
-	packet := createPacket(dumb_ID, serverDATA_AUTH, c.password)
+func (c *Connection) auth() (string, error) {
+	packet := createPacket(dumbID, serverDataAuth, c.password)
 	_, wRrr := c.conn.Write(packet)
 	if wRrr != nil {
 		return "", wRrr
 	}
 
-	buf := make([]byte, max_PACKET_SIZE)
+	buf := make([]byte, maxPacketSize)
 	_, rErr := c.conn.Read(buf)
 	if rErr != nil {
 		return "", rErr
@@ -61,18 +65,19 @@ func (c *RCONConnection) auth() (string, error) {
 		return "", errors.New("auth failed, wrong password")
 	}
 
-	if pkg.ID != dumb_ID {
+	if pkg.ID != dumbID {
 		return "", err
 	}
 
 	return pkg.Body, nil
 }
 
-func (c *RCONConnection) ExecCommand(command string) (string, error) {
+// ExecCommand 在 RCON 服务器上执行命令并返回响应。
+func (c *Connection) ExecCommand(command string) (string, error) {
 	return c.execCommandImp(command, c.retryCount)
 }
 
-func (c *RCONConnection) execCommandImp(command string, retryCount int) (string, error) {
+func (c *Connection) execCommandImp(command string, retryCount int) (string, error) {
 	if c.conn == nil {
 		if c.retryCount > 0 {
 			if c.retryDelay > 0 {
@@ -80,9 +85,8 @@ func (c *RCONConnection) execCommandImp(command string, retryCount int) (string,
 			}
 			c.Connect()
 			return c.execCommandImp(command, retryCount-1)
-		} else {
-			return "", fmt.Errorf("RCON connection is not established")
 		}
+		return "", fmt.Errorf("rcon connection is not established")
 	}
 	resp, err := c.execute(command)
 	if err != nil {
@@ -92,21 +96,20 @@ func (c *RCONConnection) execCommandImp(command string, retryCount int) (string,
 			}
 			c.Connect()
 			return c.execCommandImp(command, retryCount-1)
-		} else {
-			return "", err
 		}
+		return "", err
 	}
 	return resp, nil
 }
 
-func (c *RCONConnection) execute(command string) (string, error) {
-	packet := createPacket(dumb_ID, serverDATA_EXECCOMMAND, command)
+func (c *Connection) execute(command string) (string, error) {
+	packet := createPacket(dumbID, serverDataExecCommand, command)
 	_, wRrr := c.conn.Write(packet)
 	if wRrr != nil {
 		return "", wRrr
 	}
 
-	buf := make([]byte, max_PACKET_SIZE)
+	buf := make([]byte, maxPacketSize)
 
 	_, rErr := c.conn.Read(buf)
 	if rErr != nil {
@@ -120,20 +123,24 @@ func (c *RCONConnection) execute(command string) (string, error) {
 	return pkg.Body, nil
 }
 
-func (c *RCONConnection) Close() {
+// Close 关闭 RCON 连接。
+func (c *Connection) Close() {
 	if c.conn != nil {
 		c.conn.Close()
 	}
 }
 
 const (
-	serverDATA_AUTH           int32 = 3
-	serverDATA_AUTH_RESPONSE  int32 = 2
-	serverDATA_EXECCOMMAND    int32 = 2
-	serverDATA_RESPONSE_VALUE int32 = 0
-	max_PACKET_SIZE           int32 = 4096
+	serverDataAuth          int32 = 3
+	serverDataAuthResponse  int32 = 2
+	serverDataExecCommand   int32 = 2
+	serverDataResponseValue int32 = 0
+	maxPacketSize           int32 = 4096
 
-	dumb_ID int32 = 0
+	dumbID int32 = 0
+
+	headerLength       = 10
+	maximumPackageSize = 4096
 )
 
 type rconPacket struct {
@@ -142,9 +149,6 @@ type rconPacket struct {
 	Type int32
 	Body string
 }
-
-const headerLength = 10
-const maximumPackageSize = 4096
 
 func createPacket(id int32, pkgType int32, command string) []byte {
 	commandBytes := []byte(command)

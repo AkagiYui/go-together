@@ -1,3 +1,4 @@
+// Package main 提供雨云 API 和各种网络服务的代理服务器。
 package main
 
 import (
@@ -67,7 +68,7 @@ func main() {
 
 	r.Use(cors.New(config))
 
-	route.RegisterRainApiProxyRoutes(r)
+	route.RegisterRainAPIProxyRoutes(r)
 	route.RegisterRainImageProxyRoutes(r)
 	route.RegisterMinecraftRoutes(r)
 	route.RegisterUDPClientRoutes(r)

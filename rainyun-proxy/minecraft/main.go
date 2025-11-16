@@ -1,3 +1,4 @@
+// Package minecraft 提供查询 Minecraft 服务器信息的功能。
 package minecraft
 
 import (
@@ -10,8 +11,9 @@ import (
 	"time"
 )
 
+// GetMCBE 从 Minecraft 基岩版服务器获取服务器信息。
 func GetMCBE(host string, port int) (*MCBEInfo, error) {
-	addr := fmt.Sprintf("%s:%d", host, port)
+	addr := net.JoinHostPort(host, fmt.Sprintf("%d", port))
 	conn, err := net.DialTimeout("udp", addr, 5*time.Second)
 	if err != nil {
 		return nil, err
@@ -112,8 +114,9 @@ func readVarint(conn net.Conn) (int, error) {
 	return result, nil
 }
 
+// GetMCJE 从 Minecraft Java 版服务器获取服务器信息。
 func GetMCJE(host string, port int) (*MCJEInfo, error) {
-	addr := fmt.Sprintf("%s:%d", host, port)
+	addr := net.JoinHostPort(host, fmt.Sprintf("%d", port))
 	conn, err := net.DialTimeout("tcp", addr, 5*time.Second)
 	if err != nil {
 		return nil, err

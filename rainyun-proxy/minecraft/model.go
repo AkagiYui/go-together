@@ -2,6 +2,7 @@ package minecraft
 
 import "encoding/json"
 
+// MCBEInfo 表示来自 Minecraft 基岩版服务器的服务器信息。
 type MCBEInfo struct {
 	Host            string `json:"host"`
 	Port            int    `json:"port"`
@@ -18,6 +19,7 @@ type MCBEInfo struct {
 	Delay           int    `json:"delay"`
 }
 
+// MCJEInfo 表示来自 Minecraft Java 版服务器的服务器信息。
 type MCJEInfo struct {
 	Host            string `json:"host"`
 	Port            int    `json:"port"`
@@ -29,6 +31,7 @@ type MCJEInfo struct {
 	Delay           int    `json:"delay"`
 }
 
+// MCJEDescription 表示 Minecraft Java 版服务器响应中的描述字段。
 type MCJEDescription struct {
 	Text string `json:"text,omitempty"`
 }
@@ -54,6 +57,7 @@ func (d *MCJEDescription) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// MCJEResponse 表示来自 Minecraft Java 版服务器状态查询的完整响应。
 type MCJEResponse struct {
 	Version struct {
 		Name     string `json:"name"`
