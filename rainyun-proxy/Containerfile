@@ -1,9 +1,9 @@
-FROM  --platform=$BUILDPLATFORM golang:1.23.2-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.24.5-alpine AS builder
 ARG TARGETPLATFORM
 COPY . /workspace
 WORKDIR /workspace
 RUN GOOS=linux GOARCH=${TARGETARCH} \
-    GO111MODULE=on GOPROXY=https://goproxy.cn,direct CGO_ENABLED=0 \
+    GO111MODULE=on CGO_ENABLED=0 \
     go build -ldflags="-w -s" -o app
 
 FROM scratch AS prod
