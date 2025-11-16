@@ -1,13 +1,50 @@
-FROM --platform=$BUILDPLATFORM golang:1.24.5-alpine AS builder
-ARG TARGETPLATFORM
-COPY . /workspace
-WORKDIR /workspace
-RUN GOOS=linux GOARCH=${TARGETARCH} \
-    GO111MODULE=on CGO_ENABLED=0 \
-    go build -ldflags="-w -s" -o app
+# 第一阶段：构建阶段
+FROM golang:1.24.5-alpine AS builder
 
-FROM scratch AS prod
-COPY --from=builder /workspace/app /workspace/app
+# 安装构建依赖
+RUN apk add --no-cache git ca-certificates
+
+# 设置工作目录
+WORKDIR /build
+
+# 复制所有模块的 go.mod 文件
+COPY rainyun-proxy/go.mod rainyun-proxy/go.sum* rainyun-proxy/
+
+# 下载依赖
+WORKDIR /build/rainyun-proxy
+RUN go mod download
+
+# 复制源代码
+WORKDIR /build
+COPY .git/ .git/
+COPY rainyun-proxy/ rainyun-proxy/
+
+# 构建二进制文件
+WORKDIR /build/rainyun-proxy
+RUN set -ex && \
+    GIT_COMMIT_HASH=$(git rev-parse HEAD 2>/dev/null || echo "unknown") && \
+    BUILD_TIME=$(date -u '+%Y-%m-%d %H:%M:%S UTC') && \
+    COMMIT_TIME=$(git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M:%S UTC' 2>/dev/null || echo "unknown") && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH:-amd64} \
+    go build -a -installsuffix cgo \
+    -ldflags="-w -s" \
+    -o /app .
+
+# 第二阶段：运行阶段
+FROM scratch
+
+# 从 alpine 复制 SSL 证书
 COPY --from=alpine:latest /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-WORKDIR /workspace
-CMD ["./app"]
+
+# 复制编译好的二进制文件
+COPY --from=builder /app /app
+
+# 设置工作目录
+WORKDIR /
+
+# 暴露端口
+EXPOSE 28183
+
+# 设置入口点
+ENTRYPOINT ["/app"]
+
