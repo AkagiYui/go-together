@@ -134,8 +134,8 @@ func verifySignature(secret string, signature string, body []byte) bool {
 
 // matchesConditions 检查 payload 是否匹配实例配置的条件
 func matchesConditions(payload *WorkflowRunPayload, instance *InstanceConfig) bool {
-	// 检查仓库名称
-	if payload.Repository.FullName != instance.RepositoryName {
+	// 检查仓库名称（不区分大小写，因为 GitHub 仓库名不区分大小写）
+	if !strings.EqualFold(payload.Repository.FullName, instance.RepositoryName) {
 		log.Printf("Repository mismatch: got %s, expected %s", payload.Repository.FullName, instance.RepositoryName)
 		return false
 	}
