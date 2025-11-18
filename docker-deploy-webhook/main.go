@@ -14,17 +14,30 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/BurntSushi/toml"
 )
 
 // Config 存储应用配置
 type Config struct {
-	Port              string // HTTP 服务监听端口
-	WebhookSecret     string // GitHub webhook secret
-	RepositoryName    string // 要匹配的仓库名称
-	BranchName        string // 要匹配的分支名称
-	WorkflowFileName  string // 要匹配的工作流文件名
-	ComposeFilePath   string // Docker Compose 文件路径
-	ComposeProjectDir string // Docker Compose 项目目录
+	Server    ServerConfig     `toml:"server"`    // 服务器配置
+	Instances []InstanceConfig `toml:"instances"` // 部署实例配置数组
+}
+
+// ServerConfig 服务器全局配置
+type ServerConfig struct {
+	Port          string `toml:"port"`           // HTTP 服务监听端口
+	WebhookSecret string `toml:"webhook_secret"` // GitHub webhook secret
+	LogLevel      string `toml:"log_level"`      // 日志级别 (可选)
+}
+
+// InstanceConfig 单个部署实例配置
+type InstanceConfig struct {
+	RepositoryName    string `toml:"repository_name"`     // 要匹配的仓库名称
+	BranchName        string `toml:"branch_name"`         // 要匹配的分支名称
+	WorkflowFileName  string `toml:"workflow_file_name"`  // 要匹配的工作流文件名
+	ComposeFilePath   string `toml:"compose_file_path"`   // Docker Compose 文件路径
+	ComposeProjectDir string `toml:"compose_project_dir"` // Docker Compose 项目目录
 }
 
 // WorkflowRunPayload GitHub workflow_run 事件的 payload 结构
@@ -41,42 +54,59 @@ type WorkflowRunPayload struct {
 	} `json:"repository"`
 }
 
-// loadConfig 从环境变量加载配置
+// loadConfig 从 TOML 配置文件加载配置
 func loadConfig() (*Config, error) {
-	config := &Config{
-		Port:              getEnv("PORT", "8080"),
-		WebhookSecret:     getEnv("WEBHOOK_SECRET", ""),
-		RepositoryName:    getEnv("REPOSITORY_NAME", ""),
-		BranchName:        getEnv("BRANCH_NAME", ""),
-		WorkflowFileName:  getEnv("WORKFLOW_FILE_NAME", ""),
-		ComposeFilePath:   getEnv("COMPOSE_FILE_PATH", "docker-compose.yml"),
-		ComposeProjectDir: getEnv("COMPOSE_PROJECT_DIR", "."),
+	const configPath = "./config.toml"
+
+	// 读取配置文件
+	var config Config
+	if _, err := toml.DecodeFile(configPath, &config); err != nil {
+		return nil, fmt.Errorf("failed to read config file %s: %w", configPath, err)
 	}
 
-	// 验证必需的配置
-	if config.WebhookSecret == "" {
-		return nil, fmt.Errorf("WEBHOOK_SECRET is required")
-	}
-	if config.RepositoryName == "" {
-		return nil, fmt.Errorf("REPOSITORY_NAME is required")
-	}
-	if config.BranchName == "" {
-		return nil, fmt.Errorf("BRANCH_NAME is required")
-	}
-	if config.WorkflowFileName == "" {
-		return nil, fmt.Errorf("WORKFLOW_FILE_NAME is required")
+	// 验证配置
+	if err := validateConfig(&config); err != nil {
+		return nil, fmt.Errorf("invalid config: %w", err)
 	}
 
-	return config, nil
+	return &config, nil
 }
 
-// getEnv 获取环境变量，如果不存在则返回默认值
-func getEnv(key, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
+// validateConfig 验证配置的有效性
+func validateConfig(config *Config) error {
+	// 验证服务器配置
+	if config.Server.Port == "" {
+		return fmt.Errorf("server.port is required")
 	}
-	return value
+	if config.Server.WebhookSecret == "" {
+		return fmt.Errorf("server.webhook_secret is required")
+	}
+
+	// 验证至少有一个部署实例
+	if len(config.Instances) == 0 {
+		return fmt.Errorf("at least one instance is required")
+	}
+
+	// 验证每个实例的配置
+	for i, instance := range config.Instances {
+		if instance.RepositoryName == "" {
+			return fmt.Errorf("instances[%d].repository_name is required", i)
+		}
+		if instance.BranchName == "" {
+			return fmt.Errorf("instances[%d].branch_name is required", i)
+		}
+		if instance.WorkflowFileName == "" {
+			return fmt.Errorf("instances[%d].workflow_file_name is required", i)
+		}
+		if instance.ComposeFilePath == "" {
+			return fmt.Errorf("instances[%d].compose_file_path is required", i)
+		}
+		if instance.ComposeProjectDir == "" {
+			return fmt.Errorf("instances[%d].compose_project_dir is required", i)
+		}
+	}
+
+	return nil
 }
 
 // verifySignature 验证 GitHub webhook 签名
@@ -102,23 +132,23 @@ func verifySignature(secret string, signature string, body []byte) bool {
 	return hmac.Equal([]byte(expectedHash), []byte(actualHash))
 }
 
-// matchesConditions 检查 payload 是否匹配配置的条件
-func matchesConditions(payload *WorkflowRunPayload, config *Config) bool {
+// matchesConditions 检查 payload 是否匹配实例配置的条件
+func matchesConditions(payload *WorkflowRunPayload, instance *InstanceConfig) bool {
 	// 检查仓库名称
-	if payload.Repository.FullName != config.RepositoryName {
-		log.Printf("Repository mismatch: got %s, expected %s", payload.Repository.FullName, config.RepositoryName)
+	if payload.Repository.FullName != instance.RepositoryName {
+		log.Printf("Repository mismatch: got %s, expected %s", payload.Repository.FullName, instance.RepositoryName)
 		return false
 	}
 
 	// 检查分支名称
-	if payload.WorkflowRun.HeadBranch != config.BranchName {
-		log.Printf("Branch mismatch: got %s, expected %s", payload.WorkflowRun.HeadBranch, config.BranchName)
+	if payload.WorkflowRun.HeadBranch != instance.BranchName {
+		log.Printf("Branch mismatch: got %s, expected %s", payload.WorkflowRun.HeadBranch, instance.BranchName)
 		return false
 	}
 
 	// 检查工作流文件名
-	if !strings.HasSuffix(payload.WorkflowRun.Path, config.WorkflowFileName) {
-		log.Printf("Workflow file mismatch: got %s, expected suffix %s", payload.WorkflowRun.Path, config.WorkflowFileName)
+	if !strings.HasSuffix(payload.WorkflowRun.Path, instance.WorkflowFileName) {
+		log.Printf("Workflow file mismatch: got %s, expected suffix %s", payload.WorkflowRun.Path, instance.WorkflowFileName)
 		return false
 	}
 
@@ -136,25 +166,35 @@ func matchesConditions(payload *WorkflowRunPayload, config *Config) bool {
 	return true
 }
 
+// findMatchingInstance 查找匹配的部署实例
+func findMatchingInstance(payload *WorkflowRunPayload, config *Config) *InstanceConfig {
+	for i := range config.Instances {
+		if matchesConditions(payload, &config.Instances[i]) {
+			return &config.Instances[i]
+		}
+	}
+	return nil
+}
+
 // executeDockerCompose 执行 Docker Compose 部署命令
-func executeDockerCompose(config *Config) error {
-	log.Println("Starting Docker Compose deployment...")
+func executeDockerCompose(instance *InstanceConfig) error {
+	log.Printf("Starting Docker Compose deployment for %s...", instance.RepositoryName)
 
 	// 1. 拉取最新镜像
 	log.Println("Pulling latest images...")
-	if err := runDockerComposeCommand(config, "pull"); err != nil {
+	if err := runDockerComposeCommand(instance, "pull"); err != nil {
 		return fmt.Errorf("failed to pull images: %w", err)
 	}
 
 	// 2. 停止并删除现有容器
 	log.Println("Stopping and removing existing containers...")
-	if err := runDockerComposeCommand(config, "down"); err != nil {
+	if err := runDockerComposeCommand(instance, "down"); err != nil {
 		return fmt.Errorf("failed to stop containers: %w", err)
 	}
 
 	// 3. 重新创建并启动容器
 	log.Println("Starting containers...")
-	if err := runDockerComposeCommand(config, "up", "-d"); err != nil {
+	if err := runDockerComposeCommand(instance, "up", "-d"); err != nil {
 		return fmt.Errorf("failed to start containers: %w", err)
 	}
 
@@ -163,14 +203,14 @@ func executeDockerCompose(config *Config) error {
 }
 
 // runDockerComposeCommand 运行 docker compose 命令
-func runDockerComposeCommand(config *Config, args ...string) error {
+func runDockerComposeCommand(instance *InstanceConfig, args ...string) error {
 	// 构建命令参数
-	cmdArgs := []string{"compose", "-f", config.ComposeFilePath}
+	cmdArgs := []string{"compose", "-f", instance.ComposeFilePath}
 	cmdArgs = append(cmdArgs, args...)
 
 	// 创建命令
 	cmd := exec.Command("docker", cmdArgs...)
-	cmd.Dir = config.ComposeProjectDir
+	cmd.Dir = instance.ComposeProjectDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -205,7 +245,7 @@ func webhookHandler(config *Config) http.HandlerFunc {
 
 		// 验证签名
 		signature := r.Header.Get("X-Hub-Signature-256")
-		if !verifySignature(config.WebhookSecret, signature, body) {
+		if !verifySignature(config.Server.WebhookSecret, signature, body) {
 			log.Println("Invalid signature")
 			http.Error(w, "Invalid signature", http.StatusUnauthorized)
 			return
@@ -237,17 +277,19 @@ func webhookHandler(config *Config) http.HandlerFunc {
 			payload.WorkflowRun.Conclusion,
 		)
 
-		// 检查是否匹配条件
-		if !matchesConditions(&payload, config) {
-			log.Println("Conditions not matched, skipping deployment")
+		// 查找匹配的部署实例
+		instance := findMatchingInstance(&payload, config)
+		if instance == nil {
+			log.Println("No matching instance found, skipping deployment")
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, "Conditions not matched")
+			fmt.Fprint(w, "No matching instance found")
 			return
 		}
 
 		// 执行部署
-		log.Println("Conditions matched, starting deployment...")
-		if err := executeDockerCompose(config); err != nil {
+		log.Printf("Found matching instance for %s/%s, starting deployment...",
+			instance.RepositoryName, instance.BranchName)
+		if err := executeDockerCompose(instance); err != nil {
 			log.Printf("Deployment failed: %v", err)
 			http.Error(w, "Deployment failed", http.StatusInternalServerError)
 			return
@@ -271,19 +313,23 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	log.Printf("Starting webhook server on port %s", config.Port)
-	log.Printf("Monitoring repository: %s", config.RepositoryName)
-	log.Printf("Monitoring branch: %s", config.BranchName)
-	log.Printf("Monitoring workflow: %s", config.WorkflowFileName)
-	log.Printf("Docker Compose file: %s", config.ComposeFilePath)
-	log.Printf("Docker Compose project directory: %s", config.ComposeProjectDir)
+	log.Printf("Starting webhook server on port %s", config.Server.Port)
+	log.Printf("Loaded %d deployment instance(s):", len(config.Instances))
+	for i, instance := range config.Instances {
+		log.Printf("  [%d] Repository: %s, Branch: %s, Workflow: %s",
+			i+1,
+			instance.RepositoryName,
+			instance.BranchName,
+			instance.WorkflowFileName,
+		)
+	}
 
 	// 设置路由
 	http.HandleFunc("/webhook", webhookHandler(config))
 	http.HandleFunc("/health", healthHandler)
 
 	// 启动服务器
-	addr := ":" + config.Port
+	addr := ":" + config.Server.Port
 	log.Printf("Server listening on %s", addr)
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatalf("Server failed: %v", err)

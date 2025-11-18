@@ -1,0 +1,53 @@
+# Docker Deploy Webhook 配置文件示例
+# 复制此文件为 config.toml 并根据实际情况修改
+
+# 服务器全局配置
+[server]
+# HTTP 服务监听端口
+port = "8080"
+
+# GitHub webhook secret (必需)
+# 在 GitHub 仓库设置中配置 webhook 时设置的 secret
+webhook_secret = "your-webhook-secret-here"
+
+# 日志级别 (可选)
+# 可选值: debug, info, warn, error
+log_level = "info"
+
+# 部署实例配置数组
+# 每个实例代表一个独立的部署配置
+# 当 webhook 事件匹配某个实例的条件时，将执行对应的部署操作
+
+[[instances]]
+# 仓库名称 (格式: owner/repo)
+repository_name = "username/my-app"
+
+# 分支名称
+branch_name = "main"
+
+# 工作流文件名 (可以是完整路径或文件名)
+# 例如: "deploy.yml" 或 ".github/workflows/deploy.yml"
+workflow_file_name = "deploy.yml"
+
+# Docker Compose 文件路径
+compose_file_path = "/path/to/docker-compose.yml"
+
+# Docker Compose 项目目录
+compose_project_dir = "/path/to/project"
+
+# 可以添加更多实例
+[[instances]]
+repository_name = "username/another-app"
+branch_name = "production"
+workflow_file_name = "production-deploy.yml"
+compose_file_path = "/path/to/another/docker-compose.yml"
+compose_project_dir = "/path/to/another/project"
+
+# 第三个实例示例
+[[instances]]
+repository_name = "username/third-app"
+branch_name = "master"
+workflow_file_name = "ci-cd.yml"
+compose_file_path = "./docker-compose.prod.yml"
+compose_project_dir = "/opt/third-app"
+

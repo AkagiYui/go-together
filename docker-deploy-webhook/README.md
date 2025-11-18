@@ -6,24 +6,59 @@
 
 - ✅ 接收 GitHub workflow_run 完成事件
 - ✅ 验证 GitHub webhook 签名（HMAC SHA256）
+- ✅ 支持多实例部署配置
 - ✅ 根据配置规则匹配仓库、分支和工作流
 - ✅ 自动执行 Docker Compose 部署流程
 - ✅ 完整的日志记录
 - ✅ 健康检查端点
 
-## 环境变量配置
+## 配置文件
 
-所有配置通过环境变量提供：
+使用 TOML 格式的配置文件 `config.toml`（相对于程序运行时的工作目录）。
 
-| 环境变量 | 必需 | 默认值 | 说明 |
-|---------|------|--------|------|
-| `PORT` | 否 | `8080` | HTTP 服务监听端口 |
-| `WEBHOOK_SECRET` | 是 | - | GitHub webhook secret，用于验证请求 |
-| `REPOSITORY_NAME` | 是 | - | 要匹配的仓库名称（格式：owner/repo） |
-| `BRANCH_NAME` | 是 | - | 要匹配的分支名称 |
-| `WORKFLOW_FILE_NAME` | 是 | - | 要匹配的工作流文件名 |
-| `COMPOSE_FILE_PATH` | 否 | `docker-compose.yml` | Docker Compose 文件路径 |
-| `COMPOSE_PROJECT_DIR` | 否 | `.` | Docker Compose 项目目录 |
+### 配置结构
+
+```toml
+[server]
+port = "8080"                    # HTTP 服务监听端口
+webhook_secret = "your-secret"   # GitHub webhook secret
+log_level = "info"               # 日志级别（可选）
+
+[[instances]]
+repository_name = "owner/repo"              # 仓库名称
+branch_name = "main"                        # 分支名称
+workflow_file_name = "deploy.yml"           # 工作流文件名
+compose_file_path = "/path/to/compose.yml"  # Docker Compose 文件路径
+compose_project_dir = "/path/to/project"    # Docker Compose 项目目录
+
+# 可以配置多个实例
+[[instances]]
+repository_name = "owner/another-repo"
+branch_name = "production"
+workflow_file_name = "prod-deploy.yml"
+compose_file_path = "/opt/app/docker-compose.yml"
+compose_project_dir = "/opt/app"
+```
+
+### 配置说明
+
+**服务器配置 `[server]`**
+
+| 字段 | 必需 | 说明 |
+|------|------|------|
+| `port` | 是 | HTTP 服务监听端口 |
+| `webhook_secret` | 是 | GitHub webhook secret，用于验证请求 |
+| `log_level` | 否 | 日志级别（debug/info/warn/error） |
+
+**实例配置 `[[instances]]`**
+
+| 字段 | 必需 | 说明 |
+|------|------|------|
+| `repository_name` | 是 | 要匹配的仓库名称（格式：owner/repo） |
+| `branch_name` | 是 | 要匹配的分支名称 |
+| `workflow_file_name` | 是 | 要匹配的工作流文件名 |
+| `compose_file_path` | 是 | Docker Compose 文件路径 |
+| `compose_project_dir` | 是 | Docker Compose 项目目录 |
 
 ## 快速开始
 
@@ -57,35 +92,23 @@ GOOS=windows GOARCH=amd64 go build -o webhook-server-windows-amd64.exe
 GOOS=darwin GOARCH=arm64 go build -o webhook-server-darwin-arm64
 ```
 
-### 2. 配置环境变量
+### 2. 创建配置文件
 
 复制示例配置文件并修改：
 
 ```bash
-cp .env.example .env
-# 编辑 .env 文件，填入实际配置
+cp config.toml.example config.toml
+# 编辑 config.toml 文件，填入实际配置
 ```
 
 ### 3. 运行
 
 ```bash
-# 加载环境变量并运行
-export $(cat .env | xargs)
+# 确保 config.toml 在当前目录
 ./webhook-server
 ```
 
-或者直接设置环境变量：
-
-```bash
-PORT=8080 \
-WEBHOOK_SECRET=your_secret \
-REPOSITORY_NAME=owner/repo \
-BRANCH_NAME=main \
-WORKFLOW_FILE_NAME=deploy.yml \
-COMPOSE_FILE_PATH=/path/to/docker-compose.yml \
-COMPOSE_PROJECT_DIR=/path/to/project \
-./webhook-server
-```
+**注意**：配置文件路径 `./config.toml` 是相对于程序运行时的工作目录，而不是可执行文件所在目录。
 
 ## GitHub Webhook 配置
 
@@ -93,9 +116,11 @@ COMPOSE_PROJECT_DIR=/path/to/project \
 2. 配置以下内容：
    - **Payload URL**: `http://your-server:8080/webhook`
    - **Content type**: `application/json`
-   - **Secret**: 与 `WEBHOOK_SECRET` 环境变量相同的值
+   - **Secret**: 与配置文件中 `server.webhook_secret` 相同的值
    - **Which events**: 选择 "Let me select individual events"，勾选 "Workflow runs"
    - **Active**: 勾选
+
+**注意**：多个仓库可以使用同一个 webhook 端点，只要它们共享相同的 secret，并在配置文件中定义了对应的实例。
 
 ## API 端点
 
@@ -131,13 +156,13 @@ COMPOSE_PROJECT_DIR=/path/to/project \
    - 分支名称
    - 工作流文件名
    - 工作流状态和结论
-5. 匹配配置规则：
+5. 遍历所有配置的实例，查找匹配的实例：
    - 仓库名称匹配
    - 分支名称匹配
    - 工作流文件名匹配
    - 工作流状态为 `completed`
    - 工作流结论为 `success`
-6. 如果匹配成功，执行部署：
+6. 如果找到匹配的实例，执行部署：
    - `docker compose pull` - 拉取最新镜像
    - `docker compose down` - 停止并删除现有容器
    - `docker compose up -d` - 重新创建并启动容器
@@ -146,21 +171,19 @@ COMPOSE_PROJECT_DIR=/path/to/project \
 
 ```
 2024/01/01 12:00:00 Starting webhook server on port 8080
-2024/01/01 12:00:00 Monitoring repository: owner/repo
-2024/01/01 12:00:00 Monitoring branch: main
-2024/01/01 12:00:00 Monitoring workflow: deploy.yml
-2024/01/01 12:00:00 Docker Compose file: docker-compose.yml
-2024/01/01 12:00:00 Docker Compose project directory: /path/to/project
+2024/01/01 12:00:00 Loaded 2 deployment instance(s):
+2024/01/01 12:00:00   [1] Repository: owner/app1, Branch: main, Workflow: deploy.yml
+2024/01/01 12:00:00   [2] Repository: owner/app2, Branch: production, Workflow: prod-deploy.yml
 2024/01/01 12:00:00 Server listening on :8080
-2024/01/01 12:01:00 Received workflow_run event: action=completed, repo=owner/repo, branch=main, workflow=.github/workflows/deploy.yml, status=completed, conclusion=success
-2024/01/01 12:01:00 Conditions matched, starting deployment...
-2024/01/01 12:01:00 Starting Docker Compose deployment...
+2024/01/01 12:01:00 Received workflow_run event: action=completed, repo=owner/app1, branch=main, workflow=.github/workflows/deploy.yml, status=completed, conclusion=success
+2024/01/01 12:01:00 Found matching instance for owner/app1/main, starting deployment...
+2024/01/01 12:01:00 Starting Docker Compose deployment for owner/app1...
 2024/01/01 12:01:00 Pulling latest images...
-2024/01/01 12:01:00 Executing: docker compose -f docker-compose.yml pull
+2024/01/01 12:01:00 Executing: docker compose -f /opt/app1/docker-compose.yml pull
 2024/01/01 12:01:05 Stopping and removing existing containers...
-2024/01/01 12:01:05 Executing: docker compose -f docker-compose.yml down
+2024/01/01 12:01:05 Executing: docker compose -f /opt/app1/docker-compose.yml down
 2024/01/01 12:01:10 Starting containers...
-2024/01/01 12:01:10 Executing: docker compose -f docker-compose.yml up -d
+2024/01/01 12:01:10 Executing: docker compose -f /opt/app1/docker-compose.yml up -d
 2024/01/01 12:01:15 Docker Compose deployment completed successfully
 ```
 
@@ -179,20 +202,9 @@ Requires=docker.service
 [Service]
 Type=simple
 User=root
+# 工作目录必须包含 config.toml 文件
 WorkingDirectory=/opt/webhook
 ExecStart=/opt/webhook/webhook-server
-
-# 环境变量配置
-Environment="PORT=8080"
-Environment="WEBHOOK_SECRET=your_webhook_secret_here"
-Environment="REPOSITORY_NAME=owner/repo"
-Environment="BRANCH_NAME=main"
-Environment="WORKFLOW_FILE_NAME=deploy.yml"
-Environment="COMPOSE_FILE_PATH=/path/to/docker-compose.yml"
-Environment="COMPOSE_PROJECT_DIR=/path/to/project"
-
-# 或者从文件加载环境变量
-# EnvironmentFile=/opt/webhook/.env
 
 # 重启策略
 Restart=always
@@ -207,13 +219,27 @@ SyslogIdentifier=webhook
 WantedBy=multi-user.target
 ```
 
-启动服务：
+部署步骤：
 
 ```bash
+# 创建部署目录
+sudo mkdir -p /opt/webhook
+
+# 复制可执行文件
+sudo cp webhook-server /opt/webhook/
+
+# 创建配置文件
+sudo cp config.toml.example /opt/webhook/config.toml
+sudo nano /opt/webhook/config.toml  # 编辑配置
+
+# 启动服务
 sudo systemctl daemon-reload
 sudo systemctl enable webhook
 sudo systemctl start webhook
 sudo systemctl status webhook
+
+# 查看日志
+sudo journalctl -u webhook -f
 ```
 
 ### 使用反向代理（Nginx + HTTPS）
@@ -242,30 +268,38 @@ server {
 
 ## 安全建议
 
-1. **使用强 webhook secret**: 确保 `WEBHOOK_SECRET` 足够复杂且随机（建议使用 `openssl rand -hex 32` 生成）
+1. **使用强 webhook secret**: 确保 `server.webhook_secret` 足够复杂且随机（建议使用 `openssl rand -hex 32` 生成）
 2. **HTTPS**: 在生产环境中使用反向代理（如 Nginx）提供 HTTPS
 3. **防火墙**: 限制只允许 GitHub 的 IP 地址访问 webhook 端点
 4. **权限控制**: 确保运行服务的用户有执行 docker compose 命令的权限
 5. **日志监控**: 定期检查日志，监控异常活动
+6. **配置文件权限**: 限制 `config.toml` 的读取权限（`chmod 600 config.toml`）
 
 ## 故障排查
 
+### 配置文件未找到
+
+- 确认 `config.toml` 文件在程序运行时的工作目录中
+- 如果使用 systemd，检查 `WorkingDirectory` 设置
+- 配置文件路径是相对于工作目录，不是可执行文件所在目录
+
 ### 签名验证失败
 
-- 检查 `WEBHOOK_SECRET` 是否与 GitHub webhook 配置中的 secret 一致
+- 检查 `server.webhook_secret` 是否与 GitHub webhook 配置中的 secret 一致
 - 确认 GitHub webhook 配置中选择了正确的 Content type（application/json）
 
-### 条件不匹配
+### 没有匹配的实例
 
 - 检查日志中的详细匹配信息
-- 确认环境变量配置正确
+- 确认配置文件中的实例配置正确
 - 注意工作流文件名是检查路径后缀，例如 `.github/workflows/deploy.yml` 会匹配 `deploy.yml`
+- 确认仓库名称格式为 `owner/repo`
 
 ### 部署失败
 
 - 检查 Docker 是否正常运行
 - 确认运行服务的用户有 Docker 权限
-- 检查 `COMPOSE_FILE_PATH` 和 `COMPOSE_PROJECT_DIR` 是否正确
+- 检查实例配置中的 `compose_file_path` 和 `compose_project_dir` 是否正确
 - 查看 docker compose 命令的输出日志
 
 ## 许可证
