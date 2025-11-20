@@ -2,8 +2,10 @@
 
 一个基于 Go 1.22 ServeMux 的轻量级 RESTful API 框架，支持自动参数绑定、中间件、路由组等功能。
 
-> [!WARNING]
+> [!CAUTION]
 > 该库目前仍在积极开发中，API 随时会发生不兼容变更，请谨慎使用于生产环境。
+
+如果你习惯通过示例学习，[快速上手](#快速上手) 和 [示例代码](#示例代码) 部分会帮助你快速了解如何使用该库。
 
 ## 目录
 
@@ -30,6 +32,9 @@
   - [错误处理](#错误处理)
   - [数据验证](#数据验证)
 - [调试模式](#调试模式)
+- [示例代码](#示例代码)
+  - [上传文件](#上传文件)
+  - [ServiceHandlerInterface 结合中间件](#servicehandlerinterface-结合中间件)
 
 ## 安装
 
@@ -56,7 +61,7 @@ type HelloHandler struct {
 }
 
 // 实现 Handle 方法
-func (h *HelloHandler) Handle(ctx *rest.Context) {
+func (h HelloHandler) Handle(ctx *rest.Context) {
     message := fmt.Sprintf("Hello %s, you are %d years old!", h.Name, h.Age)
     ctx.SetResult(message)
 }
@@ -118,10 +123,10 @@ type CompleteHandler struct {
     Email string `json:"email"`
 
     // Context 值（用于中间件传递数据）
-    CurrentUser *User `context:"user"`
+    CurrentUser User `context:"user"`
 }
 
-func (h *CompleteHandler) Handle(ctx *rest.Context) {
+func (h CompleteHandler) Handle(ctx *rest.Context) {
     // 所有参数已自动绑定到结构体字段
     ctx.SetResult(map[string]interface{}{
         "user_id":      h.UserID,
@@ -142,6 +147,8 @@ func main() {
     server.Run(":8080")
 }
 ```
+
+`context` 标签的详细用法请参考 [Context 内存存储](#context-内存存储) 部分。
 
 ### 如何接收请求
 
@@ -165,7 +172,7 @@ type UserHandler struct {
     ID int64 `path:"id"`
 }
 
-func (h *UserHandler) Handle(ctx *rest.Context) {
+func (h UserHandler) Handle(ctx *rest.Context) {
     user := getUserByID(h.ID)
     if user == nil {
         ctx.SetStatusCode(404)
@@ -252,7 +259,7 @@ func main() {
 ```
 
 > [!NOTE]
-> 由于 Golang 的无协变特性，你实现的Do方法需要返回 `any` 类型，不能直接返回具体类型（如 `*User`），否则会导致编译错误。
+> 由于 Golang 的无协变特性，你实现的Do方法需要返回 `any` 类型，不能直接返回具体类型（如 `User`），否则会导致编译错误。
 > 
 > 你必须时刻注意你返回的值是否是你期望的内容，避免暴露过多不希望暴露的内部细节。
 
@@ -310,7 +317,7 @@ type AuthMiddleware struct {
     Token string `header:"Authorization"`
 }
 
-func (m *AuthMiddleware) Handle(ctx *rest.Context) {
+func (m AuthMiddleware) Handle(ctx *rest.Context) {
     if m.Token == "" {
         ctx.SetStatusCode(401)
         ctx.SetResult("Unauthorized")
@@ -378,7 +385,8 @@ func main() {
 }
 ```
 
-以上的 `{}` 只是为了代码块的可读性，并不是必须的语法。
+> [!NOTE]
+> 以上的 `{}` 只是为了代码块的可读性，并不是必须的语法。
 
 #### 路由组中间件
 
@@ -415,7 +423,7 @@ Context 对象提供了丰富的请求和响应处理功能：
 > 你应该优先使用结构体标签绑定请求参数，而不是直接操作 Context.Request 对象。
 
 ```go
-func (h *MyHandler) Handle(ctx *rest.Context) {
+func (h MyHandler) Handle(ctx *rest.Context) {
     // 请求基本信息
     method := ctx.Request.Method
     path := ctx.Request.Endpoint
@@ -443,7 +451,7 @@ func (h *MyHandler) Handle(ctx *rest.Context) {
 #### 响应设置
 
 ```go
-func (h *MyHandler) Handle(ctx *rest.Context) {
+func (h MyHandler) Handle(ctx *rest.Context) {
     // 设置响应状态码
     ctx.SetStatusCode(200)
 
@@ -473,7 +481,7 @@ type AuthMiddleware struct {
     Token string `header:"Authorization"`
 }
 
-func (m *AuthMiddleware) Handle(ctx *rest.Context) {
+func (m AuthMiddleware) Handle(ctx *rest.Context) {
     user := validateToken(m.Token)
     ctx.Set("current_user", user)
     ctx.Set("user_id", user.ID)
@@ -482,11 +490,11 @@ func (m *AuthMiddleware) Handle(ctx *rest.Context) {
 
 // 业务处理器自动注入用户信息
 type GetProfileHandler struct {
-    CurrentUser *User `context:"current_user"`
+    CurrentUser User `context:"current_user"`
     UserID      int64 `context:"user_id"`
 }
 
-func (h *GetProfileHandler) Handle(ctx *rest.Context) {
+func (h GetProfileHandler) Handle(ctx *rest.Context) {
     // h.CurrentUser 和 h.UserID 已自动注入
     ctx.SetResult(map[string]any{
         "user": h.CurrentUser,
@@ -535,7 +543,7 @@ type CreateUserHandler struct {
 // 实现 Validator 接口，该方法会在 Handle 方法调用前被自动执行
 // 如果返回错误，Handle 方法不会被调用，该方法应当仅处理校验逻辑
 // 不应该包含业务逻辑
-func (h *CreateUserHandler) Validate() error {
+func (h CreateUserHandler) Validate() error {
     if h.Username == "" {
         return errors.New("username is required")
     }
@@ -554,7 +562,7 @@ func (h *CreateUserHandler) Validate() error {
     return nil
 }
 
-func (h *CreateUserHandler) Handle(ctx *rest.Context) {
+func (h CreateUserHandler) Handle(ctx *rest.Context) {
     ctx.SetResult(map[string]string{
         "message": "User created successfully",
     })
@@ -577,5 +585,72 @@ func main() {
     // 输出：
     // [    GET] /users                           --> main.GetUsersHandler (1 handlers)
     // [   POST] /users                           --> main.CreateUserHandler (1 handlers)
+}
+```
+
+## 示例代码
+
+### 上传文件
+
+你可以使用 `multipart/form-data` 来上传文件，REST 会自动将文件内容绑定到结构体字段。
+
+你可以使用 `[]byte`、`string` 或 `*multipart.FileHeader` 类型来接收上传的文件内容。
+使用 `[]byte` 时，REST 会将文件内容读取到内存中。
+使用 `string` 时，REST 会将文件内容读取为 UTF-8 字符串，便于直接处理文本文件。
+
+> [!WARNING]
+> 如果你使用 `[]byte` 和 `string` 类型来接收文件内容，REST 会将整个文件读入内存。
+> 
+> 大文件可能会导致内存占用过高，建议使用 `*multipart.FileHeader` 类型来处理大文件上传。
+
+```go
+type UploadHandler struct {
+    File1 []byte                `form:"file1"`
+    File2 string                `form:"file2"`
+    File3 *multipart.FileHeader `form:"file3"`
+}
+
+func (h *UploadHandler) Handle(ctx *rest.Context) {
+    // 处理上传的文件
+}
+```
+
+### ServiceHandlerInterface 结合中间件
+
+该方式可使你的业务代码完全不依赖 REST 框架，
+你可以更轻松地在网络请求、定时任务和命令行，甚至不同项目间复用业务代码。
+
+```go
+// main.go
+package main
+
+// 响应包装中间件
+type ResponseWrapperMiddleware struct{}
+func (m ResponseWrapperMiddleware) Handle(ctx *rest.Context) {
+    ctx.Next()
+    originalResult := ctx.Result
+    ctx.SetResult(map[string]any{
+        "status": "success",
+        "data":   originalResult,
+    })
+}
+
+func main() {
+    server := rest.NewServer()
+    server.Use(&ResponseWrapperMiddleware{})
+    server.GetServ("/time", &GetTimeServiceHandler{})
+    server.Run(":8080")
+}
+```
+
+```go
+// service.go
+package main
+
+type GetTimeServiceHandler struct{}
+func (h GetTimeServiceHandler) Do() (any, error) {
+    return map[string]string{
+        "time": time.Now().Format(time.RFC3339),
+    }, nil
 }
 ```
