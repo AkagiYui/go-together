@@ -81,7 +81,13 @@ func getStructInfo(t reflect.Type) *structInfo {
 }
 
 // funcName 获取 HandlerFunc 的函数名称
+// 优先查询 handlerNameRegistry，如果没有注册则使用 runtime.FuncForPC 获取
 func funcName(f HandlerFunc) string {
+	// 先查询注册表（用于 Service[T] 和 Struct[T] 创建的 handler）
+	if name, ok := getRegisteredHandlerName(f); ok {
+		return name
+	}
+	// 回退到运行时获取函数名
 	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
 }
 

@@ -4,7 +4,27 @@ import (
 	"encoding/json"
 	"net/http"
 	"reflect"
+	"sync"
 )
+
+// handlerNameRegistry 存储 HandlerFunc 指针到类型名称的映射
+// 用于在调试日志中显示有意义的处理器名称
+var handlerNameRegistry = sync.Map{}
+
+// registerHandlerName 注册 HandlerFunc 的名称
+func registerHandlerName(f HandlerFunc, name string) {
+	ptr := reflect.ValueOf(f).Pointer()
+	handlerNameRegistry.Store(ptr, name)
+}
+
+// getRegisteredHandlerName 获取已注册的 HandlerFunc 名称
+func getRegisteredHandlerName(f HandlerFunc) (string, bool) {
+	ptr := reflect.ValueOf(f).Pointer()
+	if name, ok := handlerNameRegistry.Load(ptr); ok {
+		return name.(string), true
+	}
+	return "", false
+}
 
 // Service 将 ServiceHandlerInterface 类型转换为 HandlerFunc
 // T: 处理器结构体类型
@@ -24,7 +44,10 @@ func Service[T any, PT interface {
 		panic("rest.Service: type parameter must be a struct type")
 	}
 
-	return func(ctx *Context) {
+	// 获取类型的完整名称
+	typeName := t.PkgPath() + "." + t.Name()
+
+	handler := func(ctx *Context) {
 		// 创建新实例
 		handlerValue := reflect.New(t)
 		handlerPtr := handlerValue.Interface().(PT)
@@ -64,6 +87,10 @@ func Service[T any, PT interface {
 		ctx.SetResult(result)
 		ctx.SetStatus(err)
 	}
+
+	// 注册 handler 名称
+	registerHandlerName(handler, typeName)
+	return handler
 }
 
 // Struct 将 HandlerInterface 类型转换为 HandlerFunc
@@ -84,7 +111,10 @@ func Struct[T any, PT interface {
 		panic("rest.Struct: type parameter must be a struct type")
 	}
 
-	return func(ctx *Context) {
+	// 获取类型的完整名称
+	typeName := t.PkgPath() + "." + t.Name()
+
+	handler := func(ctx *Context) {
 		// 创建新实例
 		handlerValue := reflect.New(t)
 		handlerPtr := handlerValue.Interface().(PT)
@@ -122,5 +152,8 @@ func Struct[T any, PT interface {
 		// 调用 Handle 方法
 		handlerPtr.Handle(ctx)
 	}
-}
 
+	// 注册 handler 名称
+	registerHandlerName(handler, typeName)
+	return handler
+}
