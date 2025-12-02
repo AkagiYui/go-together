@@ -71,7 +71,7 @@ func main() {
     server := rest.NewServer()
 
     // 注册路由
-    server.Post("/hello", &HelloHandler{})
+    server.Post("/hello", rest.Struct[HelloHandler]())
 
     // 启动服务器
     if err := server.Run(":8080"); err != nil {
@@ -143,7 +143,7 @@ func (h CompleteHandler) Handle(ctx *rest.Context) {
 
 func main() {
     server := rest.NewServer()
-    server.Put("/users/{id}/categories/{category}", &CompleteHandler{})
+    server.Put("/users/{id}/categories/{category}", rest.Struct[CompleteHandler]())
     server.Run(":8080")
 }
 ```
@@ -152,8 +152,14 @@ func main() {
 
 ### 如何接收请求
 
-你需要为结构体实现 `HandlerInterface` 接口或 `ServiceHandlerInterface` 接口，
-为他们提供处理请求的能力。
+REST 提供了三种处理器类型，你可以根据需求选择使用：
+
+- **`HandlerFunc`**：基础函数类型，适合简单场景
+- **`HandlerInterface`**：结构体接口类型，支持自动参数绑定，可直接控制 Context
+- **`ServiceHandlerInterface`**：服务层接口类型，支持自动参数绑定，业务代码与 HTTP 解耦
+
+所有路由注册方法（`Get`、`Post`、`Put`、`Delete`、`Patch`、`Handle`）都统一接受 `HandlerFunc` 类型。
+对于结构体类型的处理器，使用 `rest.Struct[T]()` 或 `rest.Service[T]()` 函数将其转换为 `HandlerFunc`。
 
 #### HandlerInterface
 
@@ -182,30 +188,30 @@ func (h UserHandler) Handle(ctx *rest.Context) {
     ctx.SetResult(user)
 }
 
-// 注册路由
-server.Get("/users/{id}", &UserHandler{})
+// 注册路由，使用 rest.Struct[T]() 转换
+server.Get("/users/{id}", rest.Struct[UserHandler]())
 ```
 
 REST 提供了部分 HTTP 方法的便捷注册方式：
 
 ```go
-server.Get("/users", &GetUsersHandler{}) // server.Handle("GET", "/users", &GetUsersHandler{})
-server.Post("/users", &CreateUserHandler{}) // server.Handle("POST", "/users", &CreateUserHandler{})
-server.Put("/users/{id}", &UpdateUserHandler{}) // server.Handle("PUT", "/users/{id}", &UpdateUserHandler{})
-server.Delete("/users/{id}", &DeleteUserHandler{}) // server.Handle("DELETE", "/users/{id}", &DeleteUserHandler{})
-server.Patch("/users/{id}", &PatchUserHandler{}) // server.Handle("PATCH", "/users/{id}", &PatchUserHandler{})
+server.Get("/users", rest.Struct[GetUsersHandler]())
+server.Post("/users", rest.Struct[CreateUserHandler]())
+server.Put("/users/{id}", rest.Struct[UpdateUserHandler]())
+server.Delete("/users/{id}", rest.Struct[DeleteUserHandler]())
+server.Patch("/users/{id}", rest.Struct[PatchUserHandler]())
 ```
 
 如果没有你需要的 HTTP 方法，可以使用通用的 `Handle` 注册：
 
 ```go
-server.Handle("YOUR_METHOD", "/users", &OptionsHandler{})
+server.Handle("/users", "YOUR_METHOD", rest.Struct[OptionsHandler]())
 ```
 
-如果你需要处理简单的请求，可以使用函数式处理器(就像 gin 一样)，但你需要手动处理请求参数：
+如果你需要处理简单的请求，可以直接使用函数式处理器(就像 gin 一样)，但你需要手动处理请求参数：
 
 ```go
-server.GetFunc("/health", func(ctx *rest.Context) {
+server.Get("/health", func(ctx *rest.Context) {
     ctx.SetResult("OK")
 })
 ```
@@ -251,8 +257,8 @@ func (h GetUserServiceHandler) Do() (any, error) {
 func main() {
     server := rest.NewServer()
 
-    // 使用 GetServ 而不是 Get
-    server.GetServ("/users/{id}", &GetUserServiceHandler{})
+    // 使用 rest.Service[T]() 转换
+    server.Get("/users/{id}", rest.Service[GetUserServiceHandler]())
 
     server.Run(":8080")
 }
@@ -260,19 +266,8 @@ func main() {
 
 > [!NOTE]
 > 由于 Golang 的无协变特性，你实现的Do方法需要返回 `any` 类型，不能直接返回具体类型（如 `User`），否则会导致编译错误。
-> 
-> 你必须时刻注意你返回的值是否是你期望的内容，避免暴露过多不希望暴露的内部细节。
-
-
-同样地，REST 也提供了部分 HTTP 方法的便捷注册方式：
-
-```go
-server.GetServ("/users", &GetUsersServiceHandler{})
-server.PostServ("/users", &CreateUserServiceHandler{})
-server.PutServ("/users/{id}", &UpdateUserServiceHandler{})
-server.DeleteServ("/users/{id}", &DeleteUserServiceHandler{})
-server.PatchServ("/users/{id}", &PatchUserServiceHandler{})
-```
+>
+> 你必须时刻注意你返回的值是否是你期望的内容，以避免暴露过多的内部细节。
 
 ### 中间件
 
@@ -290,19 +285,19 @@ func main() {
     server := rest.NewServer()
 
     // 添加全局中间件
-    server.UseFunc(func(ctx *rest.Context) {
+    server.Use(func(ctx *rest.Context) {
         fmt.Println("Before request")
         ctx.Next() // 继续执行后续处理器
         fmt.Println("After request")
     })
 
     // 添加全局 CORS 中间件
-    server.UseFunc(func(ctx *rest.Context) {
+    server.Use(func(ctx *rest.Context) {
         ctx.Response.Header("Access-Control-Allow-Origin", "*")
         ctx.Next()
     })
 
-    server.Post("/hello", &HelloHandler{})
+    server.Post("/hello", rest.Struct[HelloHandler]())
     server.Run(":8080")
 }
 ```
@@ -333,19 +328,19 @@ func (m AuthMiddleware) Handle(ctx *rest.Context) {
 
 func main() {
     server := rest.NewServer()
-    server.Use(&AuthMiddleware{}) // 全局认证中间件
-    server.Post("/protected", &ProtectedHandler{})
+    server.Use(rest.Struct[AuthMiddleware]()) // 全局认证中间件
+    server.Post("/protected", rest.Struct[ProtectedHandler]())
     server.Run(":8080")
 }
 ```
 
 #### 单独某个路由使用中间件
 
-你可以单独为某个路由添加中间件，只需在注册路由时传入中间件结构体：
+你可以单独为某个路由添加中间件，只需在注册路由时传入多个处理器：
 
 ```go
-server.Get("/users", &AuthMiddleware{}, &GetUsersHandler{})
-server.Post("/users", &AuthMiddleware{}, &CreateUserHandler{})
+server.Get("/users", rest.Struct[AuthMiddleware](), rest.Struct[GetUsersHandler]())
+server.Post("/users", rest.Struct[AuthMiddleware](), rest.Struct[CreateUserHandler]())
 ```
 
 ### 路由组
@@ -366,18 +361,18 @@ func main() {
         // 用户相关路由
         userGroup := v1.Group("/users")
         {
-            userGroup.Get("", &GetUsersHandler{})
-            userGroup.Post("", &CreateUserHandler{})
-            userGroup.Get("/{id}", &GetUserHandler{})
-            userGroup.Put("/{id}", &UpdateUserHandler{})
-            userGroup.Delete("/{id}", &DeleteUserHandler{})
+            userGroup.Get("", rest.Struct[GetUsersHandler]())
+            userGroup.Post("", rest.Struct[CreateUserHandler]())
+            userGroup.Get("/{id}", rest.Struct[GetUserHandler]())
+            userGroup.Put("/{id}", rest.Struct[UpdateUserHandler]())
+            userGroup.Delete("/{id}", rest.Struct[DeleteUserHandler]())
         }
 
         // 需要认证的路由组
-        authGroup := v1.Group("/auth", &AuthMiddleware{})
+        authGroup := v1.Group("/auth", rest.Struct[AuthMiddleware]())
         {
-            authGroup.Get("/profile", &GetProfileHandler{})
-            authGroup.Post("/logout", &LogoutHandler{})
+            authGroup.Get("/profile", rest.Struct[GetProfileHandler]())
+            authGroup.Post("/logout", rest.Struct[LogoutHandler]())
         }
     }
 
@@ -396,19 +391,19 @@ func main() {
 
     // 创建带中间件的路由组
     apiGroup := server.Group("/api")
-    apiGroup.UseFunc(func(ctx *rest.Context) {
+    apiGroup.Use(func(ctx *rest.Context) {
         fmt.Println("API middleware")
         ctx.Next()
     })
 
     // 子路由组继承父组的中间件
     v1Group := apiGroup.Group("/v1")
-    v1Group.UseFunc(func(ctx *rest.Context) {
+    v1Group.Use(func(ctx *rest.Context) {
         fmt.Println("V1 middleware")
         ctx.Next()
     })
 
-    v1Group.Get("/users", &GetUsersHandler{})
+    v1Group.Get("/users", rest.Struct[GetUsersHandler]())
     server.Run(":8080")
 }
 ```
@@ -518,7 +513,7 @@ func main() {
     })
 
     // 设置 404 处理器
-    server.SetNotFoundHandlers(func(ctx *rest.Context) {
+    server.SetNotFound(func(ctx *rest.Context) {
         ctx.SetStatusCode(404)
         ctx.SetResult(map[string]string{
             "error": "Not found",
@@ -578,8 +573,8 @@ func main() {
     server := rest.NewServer()
     server.Debug = true // 启用调试模式
 
-    server.Get("/users", &GetUsersHandler{})
-    server.Post("/users", &CreateUserHandler{})
+    server.Get("/users", rest.Struct[GetUsersHandler]())
+    server.Post("/users", rest.Struct[CreateUserHandler]())
 
     server.Run(":8080")
     // 输出：
@@ -637,8 +632,8 @@ func (m ResponseWrapperMiddleware) Handle(ctx *rest.Context) {
 
 func main() {
     server := rest.NewServer()
-    server.Use(&ResponseWrapperMiddleware{})
-    server.GetServ("/time", &GetTimeServiceHandler{})
+    server.Use(rest.Struct[ResponseWrapperMiddleware]())
+    server.Get("/time", rest.Service[GetTimeServiceHandler]())
     server.Run(":8080")
 }
 ```
