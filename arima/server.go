@@ -21,20 +21,20 @@ func init() {
 
 	// 设置全局中间件
 	if object.HasText(cfg.AllowOrigin) {
-		s.UseFunc(middleware.CorsMiddleware(cfg.AllowOrigin))
+		s.Use(middleware.CorsMiddleware(cfg.AllowOrigin))
 	}
-	s.UseFunc(middleware.TimeConsumeMiddleware())
+	s.Use(middleware.TimeConsumeMiddleware())
 
 	// 统一封装响应体并设置HTTP状态码
-	s.UseFunc(middleware.ResponseWrapperMiddleware())
+	s.Use(middleware.ResponseWrapperMiddleware())
 
 	// 设置 404 处理器
-	s.SetNotFoundHandlers(func(ctx *rest.Context) {
+	s.SetNotFound(func(ctx *rest.Context) {
 		ctx.SetResult(model.Error(model.ErrNotFound))
 	})
 
 	// 服务健康检查
-	s.GetFunc("/healthz", func(ctx *rest.Context) {
+	s.Get("/healthz", func(ctx *rest.Context) {
 		ctx.SetResult(model.Success(GetBuildInfo()))
 	})
 

@@ -21,7 +21,7 @@ func registerRoute() {
 }
 
 func registerV1Route(r *rest.RouteGroup) {
-	r.UseFunc(middleware.AuthMiddleware())
+	r.Use(middleware.AuthMiddleware())
 
 	// 需要认证的路由组
 	requireAuthGroup := r.Group("", middleware.RequireAuth())
@@ -29,7 +29,7 @@ func registerV1Route(r *rest.RouteGroup) {
 		// 用户路由
 		userGroup := requireAuthGroup.Group("/users")
 		{
-			userGroup.GetServ("/me", &user.GetUserMeRequest{})
+			userGroup.Get("/me", rest.Service[user.GetUserMeRequest]())
 		}
 	}
 
@@ -39,22 +39,22 @@ func registerV1Route(r *rest.RouteGroup) {
 		// 用户管理
 		userGroup := requireSuperuserGroup.Group("/users")
 		{
-			userGroup.PostServ("", &user.CreateUserRequest{})
+			userGroup.Post("", rest.Service[user.CreateUserRequest]())
 		}
 
 		// 音频路由
 		audioGroup := requireSuperuserGroup.Group("/audio")
 		{
-			audioGroup.GetServ("", &audio.ListAudioRequest{})
-			audioGroup.GetServ("/origin", &audio.ListOriginAudioRequest{})
-			audioGroup.GetServ("/origin/{id}/url", &audio.GetOriginAudioDownloadURLRequest{})
-			audioGroup.PostServ("/origin", &audio.UploadOriginAudioRequest{})
+			audioGroup.Get("", rest.Service[audio.ListAudioRequest]())
+			audioGroup.Get("/origin", rest.Service[audio.ListOriginAudioRequest]())
+			audioGroup.Get("/origin/{id}/url", rest.Service[audio.GetOriginAudioDownloadURLRequest]())
+			audioGroup.Post("/origin", rest.Service[audio.UploadOriginAudioRequest]())
 		}
 
 		// 系统路由
 		systemGroup := requireSuperuserGroup.Group("/system")
 		{
-			systemGroup.GetServ("", &system.GetSystemInfoRequest{})
+			systemGroup.Get("", rest.Service[system.GetSystemInfoRequest]())
 		}
 	}
 }
