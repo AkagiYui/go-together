@@ -1,13 +1,10 @@
 package todo
 
 import (
-	"database/sql"
 	"errors"
 
-	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/common/validation"
 	"github.com/akagiyui/go-together/nottodo/repo"
-	"github.com/akagiyui/go-together/rest"
 )
 
 // UpdateTodoRequest 更新待办事项
@@ -35,25 +32,11 @@ func (r UpdateTodoRequest) Validate() error {
 	return errors.Join(errs...)
 }
 
-// Handle 处理更新待办事项的请求
-func (r UpdateTodoRequest) Handle(ctx *rest.Context) {
-	err := r.Do()
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			ctx.SetResult(model.Error(model.ErrNotFound, "Todo not found"))
-			return
-		}
-		ctx.SetResult(model.InternalError(err))
-		return
-	}
-	ctx.SetResult(model.Success(nil))
-}
-
 // Do 执行更新待办事项的业务逻辑
-func (r UpdateTodoRequest) Do() error {
+func (r UpdateTodoRequest) Do() (any, error) {
 	oriTodo, err := repo.GetTodoByID(r.ID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if r.Todo.Title != "" {
@@ -64,5 +47,5 @@ func (r UpdateTodoRequest) Do() error {
 		oriTodo.Description = r.Todo.Description
 	}
 
-	return repo.UpdateTodo(oriTodo)
+	return nil, repo.UpdateTodo(oriTodo)
 }

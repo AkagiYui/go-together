@@ -21,32 +21,32 @@ func registerRoute() {
 }
 
 func registerV1Route(r *rest.RouteGroup) {
-	r.UseFunc(middleware.AuthMiddleware())
+	r.Use(middleware.AuthMiddleware())
 
 	requireAuthGroup := r.Group("", middleware.RequireAuth())
 	{
 		todoGroup := requireAuthGroup.Group("/todo")
 		{
-			todoGroup.Get("", &todo.GetTodosRequest{})
-			todoGroup.Get("/{id}", &todo.GetTodoByIDRequest{})
-			todoGroup.Post("", &todo.CreateTodoRequest{})
-			todoGroup.Put("/{id}", &todo.UpdateTodoRequest{})
-			todoGroup.Delete("/{id}", &todo.DeleteTodoRequest{})
+			todoGroup.Get("", rest.Service[todo.GetTodosRequest]())
+			todoGroup.Get("/{id}", rest.Service[todo.GetTodoByIDRequest]())
+			todoGroup.Post("", rest.Service[todo.CreateTodoRequest]())
+			todoGroup.Put("/{id}", rest.Service[todo.UpdateTodoRequest]())
+			todoGroup.Delete("/{id}", rest.Service[todo.DeleteTodoRequest]())
 		}
 
 		systemGroup := requireAuthGroup.Group("/system")
 		{
 			settingGroup := systemGroup.Group("/settings")
 			{
-				settingGroup.Get("/is_allow_registration", &system.GetIsAllowRegistration{})
-				settingGroup.Put("/is_allow_registration", &system.SetIsAllowRegistration{})
+				settingGroup.Get("/is_allow_registration", rest.Service[system.GetIsAllowRegistration]())
+				settingGroup.Put("/is_allow_registration", rest.Service[system.SetIsAllowRegistration]())
 			}
 		}
 
 		userGroup := requireAuthGroup.Group("/user")
 		{
-			userGroup.GetServ("/info", &user.GetUserInfoRequest{})
-			userGroup.Post("", &user.CreateUserRequest{})
+			userGroup.Get("/info", rest.Service[user.GetUserInfoRequest]())
+			userGroup.Post("", rest.Service[user.CreateUserRequest]())
 		}
 	}
 
@@ -54,7 +54,7 @@ func registerV1Route(r *rest.RouteGroup) {
 	{
 		userGroup := anonymousGroup.Group("/user")
 		{
-			userGroup.PostServ("/token", &user.GenerateTokenRequest{})
+			userGroup.Post("/token", rest.Service[user.GenerateTokenRequest]())
 		}
 	}
 

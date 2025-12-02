@@ -4,11 +4,9 @@ package user
 import (
 	"errors"
 
-	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/common/validation"
 	"github.com/akagiyui/go-together/nottodo/pkg"
 	"github.com/akagiyui/go-together/nottodo/repo"
-	"github.com/akagiyui/go-together/rest"
 )
 
 // CreateUserRequest 创建用户请求
@@ -38,21 +36,11 @@ func NewUserResponse(user repo.User) Response {
 	}
 }
 
-// Handle 处理创建用户的请求
-func (r CreateUserRequest) Handle(ctx *rest.Context) {
-	newUser, err := r.Do()
-	if err != nil {
-		ctx.SetResult(model.InternalError(err))
-		return
-	}
-	ctx.SetResult(model.Success(NewUserResponse(newUser)))
-}
-
 // Do 执行创建用户的业务逻辑
-func (r CreateUserRequest) Do() (repo.User, error) {
+func (r CreateUserRequest) Do() (any, error) {
 	password, err := pkg.HashPassword(r.Password)
 	if err != nil {
-		return repo.User{}, err
+		return nil, err
 	}
 
 	r.Password = password
@@ -68,9 +56,5 @@ func (r CreateUserRequest) Do() (repo.User, error) {
 		Password: r.Password,
 		Nickname: nickname,
 	})
-
-	// RegisterAt 设置为 CreatedAt
-	user.RegisterAt = &user.CreatedAt
-
-	return user, err
+	return NewUserResponse(user), err
 }

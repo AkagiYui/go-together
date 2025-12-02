@@ -5,11 +5,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/common/task"
 	"github.com/akagiyui/go-together/nottodo/cache"
 	"github.com/akagiyui/go-together/nottodo/repo"
-	"github.com/akagiyui/go-together/rest"
 )
 
 // IsAllowRegistrationCacheKey 是否允许注册的缓存键
@@ -18,18 +16,8 @@ const IsAllowRegistrationCacheKey = "setting:is_allow_registration"
 // GetIsAllowRegistration 获取是否允许注册的设置
 type GetIsAllowRegistration struct{}
 
-// Handle 处理获取是否允许注册的请求
-func (r GetIsAllowRegistration) Handle(ctx *rest.Context) {
-	allowed, err := r.Do()
-	if err != nil {
-		ctx.SetResult(model.InternalError(err))
-		return
-	}
-	ctx.SetResult(model.Success(allowed))
-}
-
 // Do 执行获取是否允许注册的业务逻辑
-func (r GetIsAllowRegistration) Do() (allowed bool, err error) {
+func (r GetIsAllowRegistration) Do() (allowed any, err error) {
 	// read from cache
 	if err := cache.Get(IsAllowRegistrationCacheKey, &allowed); err == nil {
 		return allowed, nil
@@ -48,20 +36,11 @@ type SetIsAllowRegistration struct {
 	Allowed bool `json:"allowed"`
 }
 
-// Handle 处理设置是否允许注册的请求
-func (r SetIsAllowRegistration) Handle(ctx *rest.Context) {
-	if err := r.Do(); err != nil {
-		ctx.SetResult(model.InternalError(err))
-		return
-	}
-	ctx.SetResult(model.Success(nil))
-}
-
 // Do 执行设置是否允许注册的业务逻辑
-func (r SetIsAllowRegistration) Do() error {
+func (r SetIsAllowRegistration) Do() (any, error) {
 	err := repo.SetIsAllowRegistration(r.Allowed)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	task.Run(func() {
@@ -70,5 +49,5 @@ func (r SetIsAllowRegistration) Do() error {
 		}
 	})
 
-	return nil
+	return nil, nil
 }
