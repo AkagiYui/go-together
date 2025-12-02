@@ -228,24 +228,13 @@ func (s *Server) writeResponse(w http.ResponseWriter, result any, ctx *Context) 
 	}
 }
 
-// SetNotFoundHandlers 设置 404 处理器
-func (s *Server) SetNotFoundHandlers(handlers ...HandlerFunc) {
+// SetNotFound 设置 404 处理器
+func (s *Server) SetNotFound(handlers ...HandlerFunc) {
 	s.notFoundHandlers = handlers
 	s.notFoundNames = make([]string, len(handlers))
 	for i, f := range handlers {
 		s.notFoundNames[i] = funcName(f)
 	}
-}
-
-// SetNotFound 设置 404 处理器（支持 HandlerInterface）
-func (s *Server) SetNotFound(handlers ...HandlerInterface) error {
-	runners, names, err := runnersFromHandlers(handlers...)
-	if err != nil {
-		return err
-	}
-	s.notFoundHandlers = runners
-	s.notFoundNames = names
-	return nil
 }
 
 func contextGoWithLog(ctx *Context, server *Server, lastHandlerName string) {

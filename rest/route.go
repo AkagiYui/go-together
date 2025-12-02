@@ -27,8 +27,8 @@ type HandlerFactory struct {
 	HandlerNames []string // 存储每个 handler 的名称，用于调试输出
 }
 
-// Handle 接受结构体类型，每次请求时创建新实例
-func (g *RouteGroup) Handle(path string, method string, handlerTypes ...HandlerInterface) error {
+// Handle 注册处理器到指定路径和方法
+func (g *RouteGroup) Handle(path string, method string, handlers ...HandlerFunc) {
 	factory := HandlerFactory{
 		Path:         path,
 		Method:       method,
@@ -36,53 +36,15 @@ func (g *RouteGroup) Handle(path string, method string, handlerTypes ...HandlerI
 		HandlerNames: nil,
 	}
 
-	runners, names, err := runnersFromHandlers(handlerTypes...)
-	if err != nil {
-		return err
-	}
-	factory.RunnerChain = runners
-	factory.HandlerNames = names
-	g.Factories = append(g.Factories, factory)
-	return nil
-}
-
-// HandleServ 注册服务处理器到指定路径和方法
-func (g *RouteGroup) HandleServ(path string, method string, handlerTypes ...ServiceHandlerInterface) error {
-	factory := HandlerFactory{
-		Path:         path,
-		Method:       method,
-		RunnerChain:  nil,
-		HandlerNames: nil,
+	// 允许空方法列表，添加一个默认的空方法
+	if len(handlers) == 0 {
+		handlers = append(handlers, func(_ *Context) {})
 	}
 
-	runners, names, err := runnersFromServiceHandlers(handlerTypes...)
-	if err != nil {
-		return err
-	}
-	factory.RunnerChain = runners
-	factory.HandlerNames = names
-	g.Factories = append(g.Factories, factory)
-	return nil
-}
-
-// HandleFunc 注册函数处理器到指定路径和方法
-func (g *RouteGroup) HandleFunc(path string, method string, handlerFuncs ...HandlerFunc) {
-	factory := HandlerFactory{
-		Path:         path,
-		Method:       method,
-		RunnerChain:  nil,
-		HandlerNames: nil,
-	}
-
-	// TODO 允许空方法列表，添加一个默认的空方法
-	if len(handlerFuncs) == 0 {
-		handlerFuncs = append(handlerFuncs, func(_ *Context) {})
-	}
-
-	factory.RunnerChain = handlerFuncs
+	factory.RunnerChain = handlers
 	// 获取函数名称
-	factory.HandlerNames = make([]string, len(handlerFuncs))
-	for i, f := range handlerFuncs {
+	factory.HandlerNames = make([]string, len(handlers))
+	for i, f := range handlers {
 		factory.HandlerNames[i] = funcName(f)
 	}
 	g.Factories = append(g.Factories, factory)

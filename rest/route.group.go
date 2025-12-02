@@ -36,23 +36,11 @@ func (g *RouteGroup) Group(basePath string, preRunnerChain ...HandlerFunc) *Rout
 	return &childGroup
 }
 
-// UseFunc 为当前组添加前置函数处理器
-func (g *RouteGroup) UseFunc(handlers ...HandlerFunc) {
+// Use 为当前组添加前置处理器
+func (g *RouteGroup) Use(handlers ...HandlerFunc) {
 	g.PreRunnerChain = append(g.PreRunnerChain, handlers...)
 	// 获取函数名称
 	for _, f := range handlers {
 		g.PreRunnerNames = append(g.PreRunnerNames, funcName(f))
 	}
-}
-
-// Use 为当前组添加前置处理器
-func (g *RouteGroup) Use(handlers ...HandlerInterface) {
-	// 复用与 Handle 相同的结构体 Handler 构造逻辑
-	runners, names, err := runnersFromHandlers(handlers...)
-	if err != nil {
-		// 与 Handle 的错误语义保持一致，这里无法返回 error，只能在编程错误时直接失败
-		panic(err)
-	}
-	g.PreRunnerChain = append(g.PreRunnerChain, runners...)
-	g.PreRunnerNames = append(g.PreRunnerNames, names...)
 }
