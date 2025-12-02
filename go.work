@@ -1,6 +1,7 @@
 go 1.24.5
 
 use (
+	./arima
 	./bluestacks
 	./common
 	./docker-deploy-webhook
