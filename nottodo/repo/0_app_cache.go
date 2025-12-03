@@ -7,10 +7,10 @@ import (
 // AppCache 缓存表
 // 此模型保留在 models.go 中，因为它被 cache 包使用
 type AppCache struct {
-	Key       string    `gorm:"column:key;primaryKey;type:varchar(255)" json:"key"`                          // 键
-	Value     []byte    `gorm:"column:value;type:jsonb;not null" json:"value"`                               // 值
-	ExpiresAt time.Time `gorm:"column:expires_at;type:timestamptz;not null" json:"expires_at"`               // 过期时间（非空）
-	CreatedAt time.Time `gorm:"column:created_at;type:timestamptz;not null;default:now()" json:"created_at"` // 创建时间（非空）
+	Key       string    `gorm:"column:key;primaryKey;type:varchar(255)" json:"key"`                         // 键
+	Value     []byte    `gorm:"column:value;type:jsonb;not null" json:"value"`                              // 值
+	ExpiresAt time.Time `gorm:"column:expires_at;type:timestamptz;not null" json:"expiresAt"`               // 过期时间（非空）
+	CreatedAt time.Time `gorm:"column:created_at;type:timestamptz;not null;default:now()" json:"createdAt"` // 创建时间（非空）
 }
 
 // TableName 指定表名

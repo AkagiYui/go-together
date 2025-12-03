@@ -15,15 +15,15 @@ type GetSystemInfoRequest struct{}
 
 // Info 系统信息响应
 type Info struct {
-	AppName           string `json:"app_name"`
+	AppName           string `json:"appName"`
 	Version           string `json:"version"`
 	Description       string `json:"description"`
-	FFmpegExecutable  string `json:"ffmpeg_executable"`
-	FFprobeExecutable string `json:"ffprobe_executable"`
-	FFmpegVersion     string `json:"ffmpeg_version"`
-	FFprobeVersion    string `json:"ffprobe_version"`
-	S3Health          bool   `json:"s3_health"`
-	DBHealth          bool   `json:"db_health"`
+	FFmpegExecutable  string `json:"ffmpegExecutable"`
+	FFprobeExecutable string `json:"ffprobeExecutable"`
+	FFmpegVersion     string `json:"ffmpegVersion"`
+	FFprobeVersion    string `json:"ffprobeVersion"`
+	S3Health          bool   `json:"s3Health"`
+	DBHealth          bool   `json:"dbHealth"`
 }
 
 // Do 处理获取系统信息请求

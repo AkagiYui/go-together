@@ -12,10 +12,10 @@ type User struct {
 	Username    string     `gorm:"column:username;type:varchar(255);uniqueIndex:idx_users_username;not null" json:"username"`                          // 用户名
 	Password    string     `gorm:"column:password;type:varchar(255);not null" json:"password"`                                                         // 密码
 	Nickname    *string    `gorm:"column:nickname;type:varchar(255)" json:"nickname"`                                                                  // 昵称（可空）
-	RegisterAt  *time.Time `gorm:"column:register_at;type:timestamptz" json:"register_at"`                                                             // 注册时间（可空）
-	IsValidated bool       `gorm:"column:is_validated;not null;default:false" json:"is_validated"`                                                     // 是否已通过验证
-	ValidatedAt *time.Time `gorm:"column:validated_at;type:timestamptz" json:"validated_at"`                                                           // 验证时间（可空）
-	CreatedAt   time.Time  `gorm:"column:created_at;type:timestamptz;not null;default:current_timestamp;index:idx_users_created_at" json:"created_at"` // 创建时间（非空）
+	RegisterAt  *time.Time `gorm:"column:register_at;type:timestamptz" json:"registerAt"`                                                             // 注册时间（可空）
+	IsValidated bool       `gorm:"column:is_validated;not null;default:false" json:"isValidated"`                                                     // 是否已通过验证
+	ValidatedAt *time.Time `gorm:"column:validated_at;type:timestamptz" json:"validatedAt"`                                                           // 验证时间（可空）
+	CreatedAt   time.Time  `gorm:"column:created_at;type:timestamptz;not null;default:current_timestamp;index:idx_users_created_at" json:"createdAt"` // 创建时间（非空）
 }
 
 // TableName 指定表名

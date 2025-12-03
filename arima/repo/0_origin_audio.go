@@ -8,9 +8,9 @@ import (
 // OriginAudio 原始音频表（上传的原始文件信息）
 type OriginAudio struct {
 	ID           int64           `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
-	FileKey      string          `gorm:"column:file_key;type:varchar(255);not null" json:"file_key"`
-	IsRejected   bool            `gorm:"column:is_rejected;not null;default:false" json:"is_rejected"`
-	FileName     string          `gorm:"column:file_name;type:varchar(255);not null" json:"file_name"`
+	FileKey      string          `gorm:"column:file_key;type:varchar(255);not null" json:"fileKey"`
+	IsRejected   bool            `gorm:"column:is_rejected;not null;default:false" json:"isRejected"`
+	FileName     string          `gorm:"column:file_name;type:varchar(255);not null" json:"fileName"`
 	Size         int64           `gorm:"column:size;not null" json:"size"`
 	Duration     float64         `gorm:"column:duration;not null" json:"duration"`
 	Hash         string          `gorm:"column:hash;type:varchar(64);not null" json:"hash"`
@@ -19,15 +19,15 @@ type OriginAudio struct {
 	Artist       *string         `gorm:"column:artist;type:varchar(255)" json:"artist"`
 	Album        *string         `gorm:"column:album;type:varchar(255)" json:"album"`
 	Lyrics       json.RawMessage `gorm:"column:lyrics;type:jsonb" json:"lyrics"`
-	BitRate      int             `gorm:"column:bit_rate;not null" json:"bit_rate"`
-	ChannelCount int             `gorm:"column:channel_count;not null" json:"channel_count"`
-	SampleRate   int             `gorm:"column:sample_rate;not null" json:"sample_rate"`
+	BitRate      int             `gorm:"column:bit_rate;not null" json:"bitRate"`
+	ChannelCount int             `gorm:"column:channel_count;not null" json:"channelCount"`
+	SampleRate   int             `gorm:"column:sample_rate;not null" json:"sampleRate"`
 	Encoding     *string         `gorm:"column:encoding;type:varchar(255)" json:"encoding"`
 	Encoder      *string         `gorm:"column:encoder;type:varchar(255)" json:"encoder"`
-	HasCover     bool            `gorm:"column:has_cover;not null" json:"has_cover"`
+	HasCover     bool            `gorm:"column:has_cover;not null" json:"hasCover"`
 	Source       *string         `gorm:"column:source;type:varchar(255)" json:"source"`
-	CreatedAt    time.Time       `gorm:"column:created_at;type:timestamptz;not null;default:current_timestamp" json:"created_at"`
-	UpdatedAt    *time.Time      `gorm:"column:updated_at;type:timestamptz" json:"updated_at"`
+	CreatedAt    time.Time       `gorm:"column:created_at;type:timestamptz;not null;default:current_timestamp" json:"createdAt"`
+	UpdatedAt    *time.Time      `gorm:"column:updated_at;type:timestamptz" json:"updatedAt"`
 }
 
 // TableName 指定表名

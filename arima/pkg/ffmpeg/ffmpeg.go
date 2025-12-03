@@ -61,26 +61,26 @@ type ProbeResult struct {
 // StreamInfo 流信息
 type StreamInfo struct {
 	Index          int               `json:"index"`
-	CodecName      string            `json:"codec_name"`
-	CodecType      string            `json:"codec_type"`
-	BitRate        string            `json:"bit_rate,omitempty"`
+	CodecName      string            `json:"codecName"`
+	CodecType      string            `json:"codecType"`
+	BitRate        string            `json:"bitRate,omitempty"`
 	Channels       int               `json:"channels,omitempty"`
-	SampleRate     string            `json:"sample_rate,omitempty"`
+	SampleRate     string            `json:"sampleRate,omitempty"`
 	Tags           map[string]string `json:"tags,omitempty"`
 	Width          int               `json:"width,omitempty"`
 	Height         int               `json:"height,omitempty"`
 	Duration       string            `json:"duration,omitempty"`
-	BitsPerSample  int               `json:"bits_per_sample,omitempty"`
-	ChannelLayout  string            `json:"channel_layout,omitempty"`
+	BitsPerSample  int               `json:"bitsPerSample,omitempty"`
+	ChannelLayout  string            `json:"channelLayout,omitempty"`
 }
 
 // FormatInfo 格式信息
 type FormatInfo struct {
 	Filename   string            `json:"filename"`
-	FormatName string            `json:"format_name"`
+	FormatName string            `json:"formatName"`
 	Duration   string            `json:"duration"`
 	Size       string            `json:"size"`
-	BitRate    string            `json:"bit_rate"`
+	BitRate    string            `json:"bitRate"`
 	Tags       map[string]string `json:"tags,omitempty"`
 }
 

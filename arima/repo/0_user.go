@@ -8,11 +8,11 @@ import (
 type User struct {
 	ID          int64      `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
 	Name        string     `gorm:"column:name;type:varchar(255);not null" json:"name"`
-	AccessKey   string     `gorm:"column:access_key;type:varchar(255);uniqueIndex;not null" json:"access_key"`
-	IsActive    bool       `gorm:"column:is_active;not null;default:true" json:"is_active"`
-	IsSuperuser bool       `gorm:"column:is_superuser;not null;default:false" json:"is_superuser"`
-	CreatedAt   time.Time  `gorm:"column:created_at;type:timestamptz;not null;default:current_timestamp" json:"created_at"`
-	UpdatedAt   *time.Time `gorm:"column:updated_at;type:timestamptz" json:"updated_at"`
+	AccessKey   string     `gorm:"column:access_key;type:varchar(255);uniqueIndex;not null" json:"accessKey"`
+	IsActive    bool       `gorm:"column:is_active;not null;default:true" json:"isActive"`
+	IsSuperuser bool       `gorm:"column:is_superuser;not null;default:false" json:"isSuperuser"`
+	CreatedAt   time.Time  `gorm:"column:created_at;type:timestamptz;not null;default:current_timestamp" json:"createdAt"`
+	UpdatedAt   *time.Time `gorm:"column:updated_at;type:timestamptz" json:"updatedAt"`
 }
 
 // TableName 指定表名

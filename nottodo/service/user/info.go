@@ -18,7 +18,7 @@ type GetUserInfoResponse struct {
 	ID         int64  `json:"id"`
 	Username   string `json:"username"`
 	Nickname   string `json:"nickname"`
-	RegisterAt int64  `json:"register_at"`
+	RegisterAt int64  `json:"registerAt"`
 }
 
 // Do 执行获取用户信息的业务逻辑
