@@ -1,0 +1,51 @@
+# 视频录制上传系统配置文件
+
+# 录制参数配置
+[recording]
+# 分段时长(秒), 默认600秒(10分钟)
+segment_duration = 600
+# 本地存储路径
+storage_path = "./recordings"
+# 最大磁盘使用量(GB), 超过此值将删除最早的已上传文件
+max_disk_usage_gb = 50
+
+# S3对象存储配置
+[s3]
+# 是否启用上传
+enabled = true
+# S3端点
+endpoint = ""
+# 存储桶名称
+bucket = ""
+# 访问密钥
+access_key = ""
+# 密钥
+secret_key = ""
+# 区域(某些S3兼容服务可能需要)
+region = "us-east-1"
+
+# HTTP代理配置
+[proxy]
+# 是否启用代理
+enabled = true
+# 代理地址
+address = ""
+# 代理用户名
+username = ""
+# 代理密码
+password = ""
+
+# 摄像头配置列表
+[[cameras]]
+# 摄像头名称(用于文件命名)
+name = "camera1"
+# RTSP地址
+rtsp_url = "rtsp://admin:password@ip:port/cam/realmonitor?channel=1&subtype=0"
+# 是否启用
+enabled = true
+
+# 可以添加更多摄像头
+# [[cameras]]
+# name = "camera2"
+# rtsp_url = "rtsp://admin:password@192.168.1.1:554/stream"
+# enabled = true

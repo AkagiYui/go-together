@@ -8,4 +8,5 @@ use (
 	./nottodo
 	./rainyun-proxy
 	./rest
+	./live2s3
 )
