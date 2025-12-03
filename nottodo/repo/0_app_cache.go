@@ -40,5 +40,5 @@ func DeleteCache(key string) error {
 // DeleteExpiredCaches 删除所有过期的缓存项
 // 根据 expires_at 字段判断是否过期
 func DeleteExpiredCaches() error {
-	return DB.Where("expires_at < ?", time.Now()).Delete(&AppCache{}).Error
+	return DB.Where("expires_at < NOW()").Delete(&AppCache{}).Error
 }
