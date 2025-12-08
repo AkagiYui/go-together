@@ -5,9 +5,10 @@ import (
 	"strings"
 
 	"github.com/akagiyui/go-together/common/model"
+	"github.com/akagiyui/go-together/rest"
+
 	"github.com/akagiyui/go-together/nottodo/cache"
 	"github.com/akagiyui/go-together/nottodo/repo"
-	"github.com/akagiyui/go-together/rest"
 )
 
 // AuthMiddleware 从请求头中获取 token，并验证其有效性

@@ -4,14 +4,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
-	"log/slog"
+	resty "resty.dev/v3"
 
 	"github.com/akagiyui/go-together/nottodo/command"
 	"github.com/akagiyui/go-together/nottodo/config"
-	"resty.dev/v3"
 )
 
 const banner = `

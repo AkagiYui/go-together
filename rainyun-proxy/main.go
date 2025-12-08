@@ -10,9 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/akagiyui/go-together/rainyun-proxy/route"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+
+	"github.com/akagiyui/go-together/rainyun-proxy/route"
 )
 
 func healthcheck() {

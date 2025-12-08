@@ -10,9 +10,9 @@ import (
 
 // Setting 系统设置表
 type Setting struct {
-	Key         string    `gorm:"column:key;primaryKey;type:varchar(255)" json:"key"`                          // 键
-	Value       string    `gorm:"column:value;type:text;not null" json:"value"`                                // 值
-	Description *string   `gorm:"column:description;type:text" json:"description"`                             // 描述（可空）
+	Key         string    `gorm:"column:key;primaryKey;type:varchar(255)" json:"key"`                         // 键
+	Value       string    `gorm:"column:value;type:text;not null" json:"value"`                               // 值
+	Description *string   `gorm:"column:description;type:text" json:"description"`                            // 描述（可空）
 	UpdatedAt   time.Time `gorm:"column:updated_at;type:timestamptz;not null;default:now()" json:"updatedAt"` // 更新时间（非空）
 }
 

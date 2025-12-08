@@ -4,10 +4,10 @@ import "time"
 
 // Todo 待办事项表
 type Todo struct {
-	ID          int64     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`                                                                       // ID
-	Title       string    `gorm:"column:title;type:varchar(255);not null" json:"title"`                                                               // 标题
-	Description *string   `gorm:"column:description;type:varchar(255)" json:"description"`                                                            // 描述（可空）
-	Completed   bool      `gorm:"column:completed;not null;index:idx_todos_completed" json:"completed"`                                               // 是否完成
+	ID          int64     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`                                                                      // ID
+	Title       string    `gorm:"column:title;type:varchar(255);not null" json:"title"`                                                              // 标题
+	Description *string   `gorm:"column:description;type:varchar(255)" json:"description"`                                                           // 描述（可空）
+	Completed   bool      `gorm:"column:completed;not null;index:idx_todos_completed" json:"completed"`                                              // 是否完成
 	CreatedAt   time.Time `gorm:"column:created_at;type:timestamptz;not null;default:current_timestamp;index:idx_todos_created_at" json:"createdAt"` // 创建时间（非空）
 }
 

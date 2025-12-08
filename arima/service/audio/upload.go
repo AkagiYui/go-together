@@ -11,11 +11,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/akagiyui/go-together/common/cryptor/encrypt"
+
 	"github.com/akagiyui/go-together/arima/config"
 	"github.com/akagiyui/go-together/arima/pkg/ffmpeg"
 	"github.com/akagiyui/go-together/arima/pkg/s3"
 	"github.com/akagiyui/go-together/arima/repo"
-	"github.com/akagiyui/go-together/common/cryptor/encrypt"
 )
 
 // UploadOriginAudioRequest 上传原始音频请求

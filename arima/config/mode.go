@@ -20,4 +20,3 @@ func ParseMode(s string) Mode {
 		return ModeProd
 	}
 }
-

@@ -4,10 +4,11 @@ package middleware
 import (
 	"strings"
 
-	"github.com/akagiyui/go-together/arima/config"
-	"github.com/akagiyui/go-together/arima/repo"
 	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/rest"
+
+	"github.com/akagiyui/go-together/arima/config"
+	"github.com/akagiyui/go-together/arima/repo"
 )
 
 // AuthMiddleware 从请求头中获取 access_key，并验证其有效性
@@ -72,4 +73,3 @@ func RequireSuperuser() rest.HandlerFunc {
 		}
 	}
 }
-

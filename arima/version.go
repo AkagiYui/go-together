@@ -25,4 +25,3 @@ func GetBuildInfo() BuildInfo {
 		CommitTime:    CommitTime,
 	}
 }
-

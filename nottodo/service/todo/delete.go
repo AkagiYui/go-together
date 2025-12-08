@@ -2,6 +2,7 @@ package todo
 
 import (
 	"github.com/akagiyui/go-together/common/validation"
+
 	"github.com/akagiyui/go-together/nottodo/repo"
 )
 

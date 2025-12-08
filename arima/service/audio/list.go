@@ -2,8 +2,9 @@
 package audio
 
 import (
-	"github.com/akagiyui/go-together/arima/repo"
 	"github.com/akagiyui/go-together/common/model"
+
+	"github.com/akagiyui/go-together/arima/repo"
 )
 
 // ListAudioRequest 获取音频列表请求

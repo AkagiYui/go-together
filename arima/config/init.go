@@ -10,4 +10,3 @@ func init() {
 		panic(err)
 	}
 }
-

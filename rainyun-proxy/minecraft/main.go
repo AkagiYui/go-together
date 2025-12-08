@@ -71,6 +71,7 @@ func parseInt(b []byte) int {
 	fmt.Sscan(string(b), &val)
 	return val
 }
+
 func packVarint(val int) []byte {
 	var buf bytes.Buffer
 	for i := 0; i < 5; i++ {

@@ -20,4 +20,3 @@ func TimeConsumeMiddleware() rest.HandlerFunc {
 		)
 	}
 }
-

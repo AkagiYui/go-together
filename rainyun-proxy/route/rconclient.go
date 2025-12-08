@@ -4,8 +4,9 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/akagiyui/go-together/rainyun-proxy/rcon"
 	"github.com/gin-gonic/gin"
+
+	"github.com/akagiyui/go-together/rainyun-proxy/rcon"
 )
 
 // RCONCommand 前端发送的命令结构

@@ -5,9 +5,9 @@ import "time"
 
 // Email 邮箱表
 type Email struct {
-	ID         int64     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`                                            // ID
+	ID         int64     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`                                           // ID
 	UserID     int64     `gorm:"column:user_id;not null;index:idx_emails_user_id" json:"userId"`                         // 用户ID
-	Email      string    `gorm:"column:email;type:varchar(255);uniqueIndex:idx_emails_email;not null" json:"email"`       // 邮箱地址
+	Email      string    `gorm:"column:email;type:varchar(255);uniqueIndex:idx_emails_email;not null" json:"email"`      // 邮箱地址
 	IsPrimary  bool      `gorm:"column:is_primary;not null;default:false" json:"isPrimary"`                              // 是否为主要邮箱
 	IsVerified bool      `gorm:"column:is_verified;not null;default:false" json:"isVerified"`                            // 是否已验证
 	CreatedAt  time.Time `gorm:"column:created_at;type:timestamptz;not null;default:current_timestamp" json:"createdAt"` // 创建时间（非空）

@@ -7,9 +7,10 @@ import (
 
 	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/common/object"
+	"github.com/akagiyui/go-together/rest"
+
 	"github.com/akagiyui/go-together/nottodo/config"
 	"github.com/akagiyui/go-together/nottodo/middleware"
-	"github.com/akagiyui/go-together/rest"
 )
 
 var s *rest.Server = rest.NewServer()

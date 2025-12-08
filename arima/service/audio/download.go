@@ -4,9 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/akagiyui/go-together/common/validation"
+
 	"github.com/akagiyui/go-together/arima/pkg/s3"
 	"github.com/akagiyui/go-together/arima/repo"
-	"github.com/akagiyui/go-together/common/validation"
 )
 
 // GetOriginAudioDownloadURLRequest 获取原始音频下载URL请求

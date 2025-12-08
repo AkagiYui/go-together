@@ -60,18 +60,18 @@ type ProbeResult struct {
 
 // StreamInfo 流信息
 type StreamInfo struct {
-	Index          int               `json:"index"`
-	CodecName      string            `json:"codecName"`
-	CodecType      string            `json:"codecType"`
-	BitRate        string            `json:"bitRate,omitempty"`
-	Channels       int               `json:"channels,omitempty"`
-	SampleRate     string            `json:"sampleRate,omitempty"`
-	Tags           map[string]string `json:"tags,omitempty"`
-	Width          int               `json:"width,omitempty"`
-	Height         int               `json:"height,omitempty"`
-	Duration       string            `json:"duration,omitempty"`
-	BitsPerSample  int               `json:"bitsPerSample,omitempty"`
-	ChannelLayout  string            `json:"channelLayout,omitempty"`
+	Index         int               `json:"index"`
+	CodecName     string            `json:"codecName"`
+	CodecType     string            `json:"codecType"`
+	BitRate       string            `json:"bitRate,omitempty"`
+	Channels      int               `json:"channels,omitempty"`
+	SampleRate    string            `json:"sampleRate,omitempty"`
+	Tags          map[string]string `json:"tags,omitempty"`
+	Width         int               `json:"width,omitempty"`
+	Height        int               `json:"height,omitempty"`
+	Duration      string            `json:"duration,omitempty"`
+	BitsPerSample int               `json:"bitsPerSample,omitempty"`
+	ChannelLayout string            `json:"channelLayout,omitempty"`
 }
 
 // FormatInfo 格式信息
@@ -109,4 +109,3 @@ func (f *FFmpeg) Probe(ctx context.Context, filePath string) (*ProbeResult, erro
 
 	return &result, nil
 }
-

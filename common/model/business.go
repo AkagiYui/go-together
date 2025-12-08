@@ -29,6 +29,7 @@ var businessCodeMap = map[BusinessCode]int{
 	ErrUnauthorized:  3,
 	ErrInternalError: 4,
 }
+
 var businessCodeReverseMap = map[int]BusinessCode{}
 
 func init() {

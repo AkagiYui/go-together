@@ -78,4 +78,3 @@ func CreateOriginAudio(audio OriginAudio) (OriginAudio, error) {
 	result := DB.Create(&audio)
 	return audio, result.Error
 }
-

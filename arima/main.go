@@ -6,7 +6,6 @@ import (
 	"log/slog"
 
 	"github.com/akagiyui/go-together/arima/config"
-
 	_ "github.com/akagiyui/go-together/arima/pkg/s3" // 初始化 S3 客户端
 	_ "github.com/akagiyui/go-together/arima/repo"   // 初始化数据库
 )

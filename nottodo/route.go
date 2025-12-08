@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/akagiyui/go-together/rest"
+
 	"github.com/akagiyui/go-together/nottodo/config"
 	"github.com/akagiyui/go-together/nottodo/middleware"
 	"github.com/akagiyui/go-together/nottodo/service/system"
 	"github.com/akagiyui/go-together/nottodo/service/todo"
 	"github.com/akagiyui/go-together/nottodo/service/user"
-	"github.com/akagiyui/go-together/rest"
 )
 
 const comment = `🚀 Server starting on http://LISTEN`

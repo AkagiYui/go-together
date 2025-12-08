@@ -9,10 +9,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/akagiyui/go-together/nottodo/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"github.com/akagiyui/go-together/common/task"
+
+	"github.com/akagiyui/go-together/nottodo/config"
 )
 
 var (
@@ -29,6 +32,10 @@ type customLogger struct {
 func (l *customLogger) Trace(_ context.Context, begin time.Time, fc func() (string, int64), err error) {
 	// 获取 SQL 和影响的行数
 	sql, rows := fc()
+
+	task.Run(func() {
+
+	})
 
 	// 清理 SQL 语句
 	sqlText := strings.TrimSpace(sql)

@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/akagiyui/go-together/arima/config"
-	"github.com/akagiyui/go-together/arima/middleware"
 	"github.com/akagiyui/go-together/common/model"
 	"github.com/akagiyui/go-together/common/object"
 	"github.com/akagiyui/go-together/rest"
+
+	"github.com/akagiyui/go-together/arima/config"
+	"github.com/akagiyui/go-together/arima/middleware"
 )
 
 var s *rest.Server = rest.NewServer()

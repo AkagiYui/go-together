@@ -7,8 +7,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/akagiyui/go-together/rainyun-proxy/minecraft"
 	"github.com/gin-gonic/gin"
+
+	"github.com/akagiyui/go-together/rainyun-proxy/minecraft"
 )
 
 // RegisterMinecraftRoutes 注册 Minecraft 服务器状态查询的路由。

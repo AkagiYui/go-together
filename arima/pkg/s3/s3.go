@@ -9,11 +9,12 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/akagiyui/go-together/arima/config"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+
+	"github.com/akagiyui/go-together/arima/config"
 )
 
 // Client S3 客户端
@@ -118,4 +119,3 @@ func (c *Client) GenerateDownloadURL(ctx context.Context, key string, ttl time.D
 func (c *Client) IsHealthy(ctx context.Context) bool {
 	return c.HeadBucket(ctx) == nil
 }
-

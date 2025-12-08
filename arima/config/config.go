@@ -94,4 +94,3 @@ func getEnv(key string, defaultValue string, trim bool) string {
 	}
 	return val
 }
-

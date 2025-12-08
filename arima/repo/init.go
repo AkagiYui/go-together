@@ -9,10 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/akagiyui/go-together/arima/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"github.com/akagiyui/go-together/arima/config"
 )
 
 var (
@@ -80,4 +81,3 @@ func init() {
 		panic(fmt.Sprintf("failed to connect database: %v", err))
 	}
 }
-

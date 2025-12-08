@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/akagiyui/go-together/rest"
+
 	"github.com/akagiyui/go-together/arima/config"
 	"github.com/akagiyui/go-together/arima/middleware"
 	"github.com/akagiyui/go-together/arima/service/audio"
 	"github.com/akagiyui/go-together/arima/service/system"
 	"github.com/akagiyui/go-together/arima/service/user"
-	"github.com/akagiyui/go-together/rest"
 )
 
 const comment = `🚀 Server starting on http://LISTEN`

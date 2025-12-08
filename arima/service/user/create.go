@@ -3,9 +3,10 @@ package user
 import (
 	"errors"
 
-	"github.com/akagiyui/go-together/arima/repo"
 	"github.com/akagiyui/go-together/common/validation"
 	"github.com/google/uuid"
+
+	"github.com/akagiyui/go-together/arima/repo"
 )
 
 // CreateUserRequest 创建用户请求

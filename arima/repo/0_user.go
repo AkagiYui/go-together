@@ -39,4 +39,3 @@ func GetUserByID(id int64) (User, error) {
 	result := DB.First(&user, id)
 	return user, result.Error
 }
-
