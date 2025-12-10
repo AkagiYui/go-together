@@ -1,18 +1,5 @@
 package rest
 
-// HandlerFunc 处理函数类型
-type HandlerFunc func(*Context)
-
-// HandlerInterface 处理器接口
-type HandlerInterface interface {
-	Handle(*Context)
-}
-
-// ServiceHandlerInterface 服务处理器接口
-type ServiceHandlerInterface interface {
-	Do() (any, error)
-}
-
 // Validator 接口用于在参数绑定后、业务处理前进行数据校验
 // 实现此接口的 handler 会在 Handle 方法调用前自动执行 Validate 方法
 type Validator interface {

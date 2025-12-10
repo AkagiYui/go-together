@@ -89,6 +89,7 @@ func (s *Server) Run(addr string) error {
 	mux := http.NewServeMux()
 	registerRouteGroup(mux, &s.RouteGroup, s) // 处理所有注册的 handler
 
+	// 输出所有注册的路由
 	if s.Debug {
 		// 计算最长路径长度，用于对齐
 		endpointMaxLen := 0
@@ -237,6 +238,7 @@ func (s *Server) SetNotFound(handlers ...HandlerFunc) {
 	}
 }
 
+// contextGoWithLog 执行处理器链并记录日志
 func contextGoWithLog(ctx *Context, server *Server, lastHandlerName string) {
 	// log if dev
 	if server.Debug {
