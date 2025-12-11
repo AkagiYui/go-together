@@ -3,6 +3,7 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"reflect"
 	"runtime"
@@ -116,7 +117,15 @@ func (s *Server) Run(addr string) error {
 		}
 	}
 
-	return http.ListenAndServe(addr, mux)
+	if addr == "" {
+		addr = ":http"
+	}
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
+	defer ln.Close()
+	return http.Serve(ln, mux)
 }
 
 func registerRouteGroup(mux *http.ServeMux, group *RouteGroup, server *Server) {
