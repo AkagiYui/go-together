@@ -42,6 +42,7 @@ go get github.com/akagiyui/go-together/common@latest
 ### (WIP)[nottodo](./nottodo/) - 待办事项管理
 
 [![Build Status](https://github.com/akagiyui/go-together/actions/workflows/nottodo-build.yml/badge.svg)](https://github.com/AkagiYui/go-together/actions/workflows/nottodo-build.yml)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FAkagiYui%2Fgo-together.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FAkagiYui%2Fgo-together?ref=badge_shield)
 
 基于 rest 框架构建的待办事项管理系统。
 
@@ -78,3 +79,7 @@ BlueStacks Air 安卓模拟器管理工具，功能包括：
 - 实例状态监控
 - ADB 连接状态显示
 - 实时刷新的表格界面
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FAkagiYui%2Fgo-together.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FAkagiYui%2Fgo-together?ref=badge_large)
