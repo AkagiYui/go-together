@@ -13,6 +13,7 @@ go-together 是一个基于 Go 语言开发的多模块项目集合，包含多�
 go get github.com/akagiyui/go-together/rest@latest
 ```
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/akagiyui/go-together/rest.svg)](https://pkg.go.dev/github.com/akagiyui/go-together/rest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/badge/Go-1.22-blue.svg)](https://golang.org)
 [![Go Report Card](https://goreportcard.com/badge/github.com/akagiyui/go-together/rest)](https://goreportcard.com/report/github.com/akagiyui/go-together/rest)
