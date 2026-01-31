@@ -6,25 +6,25 @@ import (
 
 // Audio 音频表（用于分发的音频文件信息）
 type Audio struct {
-	ID           int64      `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
-	TrackID      int64      `gorm:"column:track_id;not null" json:"trackId"`
-	Size         int64      `gorm:"column:size;not null" json:"size"`
-	FileKey      string     `gorm:"column:file_key;type:varchar(255);not null" json:"fileKey"`
-	Hash         string     `gorm:"column:hash;type:varchar(64);not null" json:"hash"`
-	Duration     int        `gorm:"column:duration;not null" json:"duration"`
-	Bitrate      int        `gorm:"column:bitrate;not null" json:"bitrate"`
-	ChannelCount int        `gorm:"column:channel_count;not null" json:"channelCount"`
-	SamplingRate int        `gorm:"column:sampling_rate;not null" json:"samplingRate"`
-	BitDepth     int        `gorm:"column:bit_depth;not null" json:"bitDepth"`
-	Format       string     `gorm:"column:format;type:varchar(255);not null" json:"format"`
-	Encoder      string     `gorm:"column:encoder;type:varchar(255);not null" json:"encoder"`
-	HasLyric     bool       `gorm:"column:has_lyric;not null" json:"hasLyric"`
-	HasCover     bool       `gorm:"column:has_cover;not null" json:"hasCover"`
-	QualityLabel *string    `gorm:"column:quality_label;type:varchar(255)" json:"qualityLabel"`
-	IsDirty      bool       `gorm:"column:is_dirty;not null;default:false" json:"isDirty"`
-	Source       *string    `gorm:"column:source;type:varchar(255)" json:"source"`
-	CreatedAt    time.Time  `gorm:"column:created_at;type:timestamptz;not null;default:current_timestamp" json:"createdAt"`
-	UpdatedAt    *time.Time `gorm:"column:updated_at;type:timestamptz" json:"updatedAt"`
+	ID           int64      `json:"id"           gorm:"column:id;primaryKey;autoIncrement"`
+	TrackID      int64      `json:"trackId"      gorm:"column:track_id;not null"`
+	Size         int64      `json:"size"         gorm:"column:size;not null"`
+	FileKey      string     `json:"fileKey"      gorm:"column:file_key;type:varchar(255);not null"`
+	Hash         string     `json:"hash"         gorm:"column:hash;type:varchar(64);not null"`
+	Duration     int        `json:"duration"     gorm:"column:duration;not null"`
+	Bitrate      int        `json:"bitrate"      gorm:"column:bitrate;not null"`
+	ChannelCount int        `json:"channelCount" gorm:"column:channel_count;not null"`
+	SamplingRate int        `json:"samplingRate" gorm:"column:sampling_rate;not null"`
+	BitDepth     int        `json:"bitDepth"     gorm:"column:bit_depth;not null"`
+	Format       string     `json:"format"       gorm:"column:format;type:varchar(255);not null"`
+	Encoder      string     `json:"encoder"      gorm:"column:encoder;type:varchar(255);not null"`
+	HasLyric     bool       `json:"hasLyric"     gorm:"column:has_lyric;not null"`
+	HasCover     bool       `json:"hasCover"     gorm:"column:has_cover;not null"`
+	QualityLabel *string    `json:"qualityLabel" gorm:"column:quality_label;type:varchar(255)"`
+	IsDirty      bool       `json:"isDirty"      gorm:"column:is_dirty;not null;default:false"`
+	Source       *string    `json:"source"       gorm:"column:source;type:varchar(255)"`
+	CreatedAt    time.Time  `json:"createdAt"    gorm:"column:created_at;type:timestamptz;not null;default:current_timestamp"`
+	UpdatedAt    *time.Time `json:"updatedAt"    gorm:"column:updated_at;type:timestamptz"`
 }
 
 // TableName 指定表名
