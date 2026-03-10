@@ -133,6 +133,12 @@ func setFieldValue(fieldValue reflect.Value, values ...string) error {
 // setScalarValue 设置标量值
 func setScalarValue(fieldValue reflect.Value, value string) error {
 	switch fieldValue.Kind() {
+	case reflect.Ptr: // 指针类型：创建新元素，递归设置值，再赋给指针
+		elem := reflect.New(fieldValue.Type().Elem())
+		if err := setScalarValue(elem.Elem(), value); err != nil {
+			return err
+		}
+		fieldValue.Set(elem)
 	case reflect.String: // 字符串
 		fieldValue.SetString(value)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64: // 整数
