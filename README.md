@@ -40,12 +40,6 @@ go get github.com/akagiyui/go-together/common@latest
 
 ## 应用程序
 
-### (WIP)[nottodo](./nottodo/) - 待办事项管理
-
-[![Build Status](https://github.com/akagiyui/go-together/actions/workflows/nottodo-build.yml/badge.svg)](https://github.com/AkagiYui/go-together/actions/workflows/nottodo-build.yml)
-
-基于 rest 框架构建的待办事项管理系统。
-
 ### (WIP)[arima](./arima/) - 音乐数据库
 音频文件管理服务，提供：
 - 音频文件上传、下载和列表功能

@@ -5,8 +5,7 @@ use (
 	./bluestacks
 	./common
 	./docker-deploy-webhook
-	./nottodo
+	./live2s3
 	./rainyun-proxy
 	./rest
-	./live2s3
 )
