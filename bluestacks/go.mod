@@ -1,6 +1,6 @@
 module github.com/akagiyui/go-together/bluestacks
 
-go 1.24.5
+go 1.26.1
 
 require github.com/jedib0t/go-pretty/v6 v6.6.9
 
