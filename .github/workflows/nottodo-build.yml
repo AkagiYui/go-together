@@ -3,7 +3,7 @@ name: Build and Push nottodo Container Image
 on:
   push:
     branches:
-      - master
+      - dev
     paths:
       - '.github/workflows/nottodo-build.yml'
       # nottodo 项目目录
