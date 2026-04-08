@@ -5,6 +5,7 @@ use (
 	./bluestacks
 	./common
 	./docker-deploy-webhook
+	./keep-traffic-ratio
 	./live2s3
 	./rainyun-proxy
 	./rest
