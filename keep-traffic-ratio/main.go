@@ -95,68 +95,65 @@ func main() {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			// Update traffic statistics
-			if err := monitor.Update(); err != nil {
-				if ui != nil {
-					ui.AppendLog(fmt.Sprintf("[red]Error updating stats: %v[white]", err))
-				} else {
-					fmt.Fprintf(os.Stderr, "Error updating stats: %v\n", err)
-				}
-				continue
-			}
-
-			ifaceRx, ifaceTx, totalRx, totalTx := monitor.GetStats()
-			dlRatio := monitor.GetDownloadRatio()
-			ulRatio := monitor.GetUploadRatio()
-
-			// Update display
+	for range ticker.C {
+		// Update traffic statistics
+		if err := monitor.Update(); err != nil {
 			if ui != nil {
-				ui.UpdateStats(*ifaceName, ifaceRx, ifaceTx, totalRx, totalTx, dlRatio, ulRatio, *targetRatio)
-				ui.UpdateDownload(downloader.IsDownloading(), downloader.GetCurrentURL(), downloader.GetDownloaded(), *dryRun)
+				ui.AppendLog(fmt.Sprintf("[red]Error updating stats: %v[white]", err))
 			} else {
-				// Print to stdout in no-ui mode
-				fmt.Printf("\rInterface: %s | Download: %s (%.2f%%) | 保持至少: %.2f%% | Upload: %s | Total: %s / %s | Downloading: %v",
-					*ifaceName,
-					FormatBytes(ifaceRx), dlRatio*100,
-					*targetRatio*100,
-					FormatBytes(ifaceTx),
-					FormatBytes(totalRx), FormatBytes(totalTx),
-					downloader.IsDownloading(),
-				)
-				if downloader.IsDownloading() {
-					fmt.Printf(" | Downloaded: %s", FormatBytes(downloader.GetDownloaded()))
-				}
-				fmt.Println()
+				fmt.Fprintf(os.Stderr, "Error updating stats: %v\n", err)
 			}
+			continue
+		}
 
-			// Check if we need to download
-			if dlRatio < *targetRatio && !downloader.IsDownloading() {
-				// Select a random URL
-				url := values[randSrc.Intn(len(values))]
-				if ui != nil {
-					ui.AppendLog(fmt.Sprintf("Starting download from: %s", url))
-				} else {
-					fmt.Printf("\nStarting download from: %s\n", url)
-				}
-				go func(u string) {
-					if err := downloader.Download(u); err != nil {
-						if ui != nil {
-							ui.AppendLog(fmt.Sprintf("[red]Download error: %v[white]", err))
-						} else {
-							fmt.Printf("Download error: %v\n", err)
-						}
-					} else {
-						if ui != nil {
-							ui.AppendLog(fmt.Sprintf("[green]Download completed: %s[white]", u))
-						} else {
-							fmt.Printf("Download completed: %s\n", u)
-						}
-					}
-				}(url)
+		ifaceRx, ifaceTx, totalRx, totalTx := monitor.GetStats()
+		dlRatio := monitor.GetDownloadRatio()
+		ulRatio := monitor.GetUploadRatio()
+
+		// Update display
+		if ui != nil {
+			ui.UpdateStats(*ifaceName, ifaceRx, ifaceTx, totalRx, totalTx, dlRatio, ulRatio, *targetRatio)
+			ui.UpdateDownload(downloader.IsDownloading(), downloader.GetCurrentURL(), downloader.GetDownloaded(), *dryRun)
+		} else {
+			// Print to stdout in no-ui mode
+			fmt.Printf("\rInterface: %s | Download: %s (%.2f%%) | 保持至少: %.2f%% | Upload: %s | Total: %s / %s | Downloading: %v",
+				*ifaceName,
+				FormatBytes(ifaceRx), dlRatio*100,
+				*targetRatio*100,
+				FormatBytes(ifaceTx),
+				FormatBytes(totalRx), FormatBytes(totalTx),
+				downloader.IsDownloading(),
+			)
+			if downloader.IsDownloading() {
+				fmt.Printf(" | Downloaded: %s", FormatBytes(downloader.GetDownloaded()))
 			}
+			fmt.Println()
+		}
+
+		// Check if we need to download
+		if dlRatio < *targetRatio && !downloader.IsDownloading() {
+			// Select a random URL
+			url := values[randSrc.Intn(len(values))]
+			if ui != nil {
+				ui.AppendLog(fmt.Sprintf("Starting download from: %s", url))
+			} else {
+				fmt.Printf("\nStarting download from: %s\n", url)
+			}
+			go func(u string) {
+				if err := downloader.Download(u); err != nil {
+					if ui != nil {
+						ui.AppendLog(fmt.Sprintf("[red]Download error: %v[white]", err))
+					} else {
+						fmt.Printf("Download error: %v\n", err)
+					}
+				} else {
+					if ui != nil {
+						ui.AppendLog(fmt.Sprintf("[green]Download completed: %s[white]", u))
+					} else {
+						fmt.Printf("Download completed: %s\n", u)
+					}
+				}
+			}(url)
 		}
 	}
 }
