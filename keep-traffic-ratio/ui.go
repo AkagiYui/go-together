@@ -11,24 +11,8 @@ import (
 	zone "github.com/lrstanley/bubblezone/v2"
 )
 
-// UI styles
+// UI color styles (these are constant and don't need to be dynamic)
 var (
-	statsStyle = lipgloss.NewStyle().
-			Border(lipgloss.NormalBorder()).
-			Padding(0, 1).
-			Width(80)
-
-	downloadStyle = lipgloss.NewStyle().
-			Border(lipgloss.NormalBorder()).
-			Padding(0, 1).
-			Width(80)
-
-	logStyle = lipgloss.NewStyle().
-			Border(lipgloss.NormalBorder()).
-			Padding(0, 1).
-			Width(80).
-			MaxHeight(10)
-
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("205"))
@@ -41,6 +25,47 @@ var (
 	redStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
 	whiteStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("15"))
 )
+
+// getBoxStyles returns dynamic styles based on terminal width
+func (m *model) getBoxStyles() (statsStyle, downloadStyle, logStyle lipgloss.Style) {
+	width := m.width
+	if width < 20 {
+		width = 20 // Minimum width to prevent issues
+	}
+
+	// Calculate content width (subtract borders and padding: 2 for border + 2 for padding)
+	contentWidth := width - 4
+	if contentWidth < 10 {
+		contentWidth = 10
+	}
+
+	statsStyle = lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder()).
+		Padding(0, 1).
+		Width(contentWidth)
+
+	downloadStyle = lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder()).
+		Padding(0, 1).
+		Width(contentWidth)
+
+	// Calculate max height for log box (leave space for stats and download)
+	maxLogHeight := m.height - 15 // Reserve space for stats (~8 lines) + download (~5 lines) + margins
+	if maxLogHeight < 5 {
+		maxLogHeight = 5
+	}
+	if maxLogHeight > 15 {
+		maxLogHeight = 15
+	}
+
+	logStyle = lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder()).
+		Padding(0, 1).
+		Width(contentWidth).
+		MaxHeight(maxLogHeight)
+
+	return statsStyle, downloadStyle, logStyle
+}
 
 // MessageType defines different UI update messages
 type MessageType int
@@ -233,6 +258,9 @@ func (m *model) View() tea.View {
 		view.SetContent("Initializing...")
 		return view
 	}
+
+	// Get dynamic styles based on terminal size
+	statsStyle, downloadStyle, logStyle := m.getBoxStyles()
 
 	// Stats section
 	statsContent := fmt.Sprintf(
