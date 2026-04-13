@@ -1,7 +1,5 @@
 module github.com/akagiyui/go-together/common
 
-go 1.24.0
-
-toolchain go1.24.5
+go 1.26.0
 
 require golang.org/x/sys v0.37.0
